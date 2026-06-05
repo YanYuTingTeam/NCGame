@@ -35,6 +35,7 @@ public class LobbyListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        NCGame.getInstance().getScoreBoardManager().updateScoreBoard(player);
         // 热加入玩家
         GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.WAITING && gameManager.getCurrentGame() != null) {

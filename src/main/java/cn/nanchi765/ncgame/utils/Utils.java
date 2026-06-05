@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.game.IMinigame;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -37,5 +38,9 @@ public class Utils {
     public static boolean isAlive(Player player) {
         GameManager gameManager = NCGame.getInstance().getGameManager();
         return gameManager.getAlivePlayers().contains(player);
+    }
+
+    public static String colorize(String text) {
+        return ChatColor.translateAlternateColorCodes('&', text);
     }
 }

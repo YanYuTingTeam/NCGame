@@ -18,5 +18,6 @@ public class InGameQuitListener implements Listener {
 
         Player player = event.getPlayer();
         gameManager.getCurrentGame().eliminatePlayer(player);
+        NCGame.getInstance().getScoreBoardManager().removeScoreBoard(player);
     }
 }

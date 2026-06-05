@@ -3,80 +3,115 @@ package cn.nanchi765.ncgame.manager;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.LobbyConfig;
 import fr.mrmicky.fastboard.FastBoard;
+import lombok.var;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static cn.nanchi765.ncgame.utils.Utils.colorize;
 
 public class ScoreBoardManager {
 
-    private final HashMap<UUID, FastBoard> boards = new HashMap<>();
+    private final Map<UUID, FastBoard> boards = new ConcurrentHashMap<>();
+    private final NCGame plugin;
     private final GameManager gameManager;
     private final LobbyConfig lobbyConfig;
 
-    public ScoreBoardManager(NCGame ncGame, GameManager gameManager, LobbyConfig lobbyConfig) {
+    public ScoreBoardManager(NCGame plugin, GameManager gameManager, LobbyConfig lobbyConfig) {
+        this.plugin = plugin;
         this.gameManager = gameManager;
         this.lobbyConfig = lobbyConfig;
 
-        Bukkit.getServer().getScheduler().runTaskTimerAsynchronously(NCGame.getInstance(), () -> {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
             for (Player player : gameManager.getPlayers()) {
-                giveScoreBoard(player);
+                updateScoreBoard(player);
             }
-//            for (FastBoard board : this.boards.values()) {
-//                scoreBoardManager.updateBoard(board, board.getPlayer());
-//            }
-        }, 0, 20);
+        }, 0L, 20L);
     }
 
-    public void giveScoreBoard(Player player) {
-        FastBoard board;
-        if (boards.getOrDefault(player.getUniqueId(), null) == null) {
-            board = new FastBoard(player);
-            boards.put(player.getUniqueId(), board);
-        } else {
-            board = boards.getOrDefault(player.getUniqueId(), null);
+    // ======================== 公开接口 ========================
+
+    public void removeScoreBoard(Player player) {
+        FastBoard board = boards.remove(player.getUniqueId());
+        if (board != null) {
+            board.delete();
         }
+    }
+
+    // ======================== 核心逻辑 ========================
+
+    public void updateScoreBoard(Player player) {
+        if (!player.isOnline()) {
+            removeScoreBoard(player);
+            return;
+        }
+
+        FastBoard board = boards.computeIfAbsent(player.getUniqueId(), id -> new FastBoard(player));
 
         if (gameManager.getCurrentStatus() == Status.WAITING) {
             if (!lobbyConfig.isScoreboardEnabled()) return;
-            String lobbyTitle = lobbyConfig.getScoreboardTitle();
-            List<String> lines = replaceLobbyVariables(lobbyConfig.getScoreboardLines(), player);
-            setBoard(board, player, lobbyTitle, lines);
-            return;
+            applyBoard(board,
+                    lobbyConfig.getScoreboardTitle(),
+                    lobbyConfig.getScoreboardLines(),
+                    player, true);
+        } else {
+            var config = gameManager.getCurrentGame().getConfig();
+            applyBoard(board,
+                    config.getScoreboardTitle(),
+                    config.getScoreboardLines(),
+                    player, false);
         }
-
-        String gameSbTitle = gameManager.getCurrentGame().getConfig().getScoreboardTitle();
-        List<String> lines = gameManager.getCurrentGame().getConfig().getScoreboardLines();
-        setBoard(board, player, gameSbTitle, lines);
     }
 
-    private void setBoard(FastBoard board, Player player, String title, List<String> lines) {
-        if (board == null) return;
-        if (player == null || !player.isOnline()) {
-            board.delete();
-            return;
-        }
-        board.updateTitle(title.replace("&", "§"));
-        board.updateLines(lines);
+    private void applyBoard(FastBoard board, String title, List<String> template,
+                            Player player, boolean isLobby) {
+        board.updateTitle(colorize(title));
+        board.updateLines(buildLines(template, player, isLobby));
     }
 
-    private List<String> replaceLobbyVariables(List<String> lines, Player player) {
-        List<String> result = new ArrayList<>();
-        int countdown = NCGame.getInstance().getGameManager().getGameStartingTask().getCountdown();
-        for (String line : lines) {
-            result.add(ChatColor.translateAlternateColorCodes('&',
-                    line.replace("{current_players}", String.valueOf(gameManager.getPlayers().size()))
-                            .replace("{min_players}", String.valueOf(lobbyConfig.getMinPlayers()))
-                            .replace("{required_players}", String.valueOf(lobbyConfig.getRequiredPlayers()))
-                            .replace("{countdown}", String.valueOf(countdown))
-                            .replace("{player_score}", String.valueOf(
-                                    NCGame.getInstance().getPlayerScore(player)))));
+    // ======================== 变量替换 ========================
+
+    private List<String> buildLines(List<String> template, Player player, boolean isLobby) {
+        int countdown    = resolveCountdown(isLobby);
+        int gameTime = isLobby
+                ? 0
+                : gameManager.getCurrentGame().getConfig().getGameTime();
+        int playerScore  = plugin.getPlayerScore(player);
+        int currentSize  = gameManager.getPlayers().size();
+        int minPlayers   = lobbyConfig.getMinPlayers();
+        int required     = lobbyConfig.getRequiredPlayers();
+
+        List<String> result = new ArrayList<>(template.size());
+        for (String line : template) {
+            String replaced = line
+                    .replace("{current_players}", String.valueOf(currentSize))
+                    .replace("{min_players}",      String.valueOf(minPlayers))
+                    .replace("{required_players}",  String.valueOf(required))
+                    .replace("{countdown}",         String.valueOf(countdown))
+                    .replace("{time_left}",         String.valueOf(countdown))
+                    .replace("{total_time}",        String.valueOf(gameTime))
+                    .replace("{player_score}",      String.valueOf(playerScore));
+            result.add(colorize(replaced));
         }
         return result;
     }
+
+
+    private int resolveCountdown(boolean isLobby) {
+        var startingTask = gameManager.getGameStartingTask();
+        if (startingTask != null) {
+            return startingTask.getCountdown();
+        }
+        return isLobby
+                ? lobbyConfig.getCountdownSeconds()
+                : gameManager.getCurrentGame().getConfig().getGameTime();
+    }
+
+    // ======================== 工具 ========================
 
 }

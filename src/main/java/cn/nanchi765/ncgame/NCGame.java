@@ -60,15 +60,15 @@ public class NCGame extends JavaPlugin {
         lobbyConfig = new LobbyConfig(new File(getDataFolder(), "lobby.yml"));
         enableGameConfig = new EnableGameConfig(new File(getDataFolder(), "enablegame.yml"));
 
+        gameManager = new GameManager(this);
+        scoreBoardManager = new ScoreBoardManager(this, gameManager, lobbyConfig);
+
         getServer().getPluginManager().registerEvents(new FoodLevelChangeListener(), this);
         getServer().getPluginManager().registerEvents(new InGameQuitListener(), this);
         getServer().getPluginManager().registerEvents(new LobbyListener(), this);
         getServer().getPluginManager().registerEvents(new SpecListener(), this);
         getServer().getPluginManager().registerEvents(new MOTDListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-
-        gameManager = new GameManager(this);
-        scoreBoardManager = new ScoreBoardManager(this, gameManager, lobbyConfig);
 
         worldResetManager = new WorldResetManager(this);
         // 开服时重置所有游戏世界（如果已有备份则恢复，否则保持原样）
