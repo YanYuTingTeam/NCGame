@@ -3,12 +3,11 @@ package cn.nanchi765.ncgame.manager;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.*;
 import cn.nanchi765.ncgame.game.*;
-import cn.nanchi765.ncgame.config.game.*;
-import cn.nanchi765.ncgame.game.*;
 import cn.nanchi765.ncgame.task.GamePlayingTask;
 import cn.nanchi765.ncgame.task.GamePrepareTask;
 import cn.nanchi765.ncgame.task.GameStartingTask;
 import cn.nanchi765.ncgame.utils.LobbyUtils;
+import cn.nanchi765.ncgame.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -57,6 +56,18 @@ public class GameManager {
         this.plugin = plugin;
         dataFolder = plugin.getDataFolder();
         currentStatus = Status.WAITING;
+    }
+
+    public void addPlayer(Player player) {
+        Utils.resetPlayer(player);
+        players.add(player);
+        alivePlayers.add(player);
+    }
+
+    public void removePlayer(Player player) {
+        Utils.resetPlayer(player);
+        players.remove(player);
+        alivePlayers.remove(player);
     }
 
     public void addLatePlayer(Player player) {

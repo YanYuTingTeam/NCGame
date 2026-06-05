@@ -13,6 +13,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -45,6 +46,8 @@ public class LobbyListener implements Listener {
         // 传送大厅
         teleportToLobby(player);
 
+        gameManager.addPlayer(player);
+
         // 达到人数 开始倒计时
         if (gameManager.getGameStartingTask() == null && gameManager.getPlayers().size() > lobbyConfig.getMinPlayers()) {
             gameManager.setGameStartingTask(new GameStartingTask(gameManager));
@@ -53,6 +56,8 @@ public class LobbyListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        gameManager.removePlayer(player);
         // 人数离开 没达到人数 取消倒计时
         if (gameManager.getGameStartingTask() != null && gameManager.getPlayers().size() < lobbyConfig.getMinPlayers()) {
             gameManager.getGameStartingTask().cancel();
@@ -73,6 +78,12 @@ public class LobbyListener implements Listener {
                 LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
             }
         }
+    }
+
+    @EventHandler
+    public void onPlayerInventoryClick(InventoryClickEvent event) {
+        if (gameManager.getCurrentStatus() != Status.WAITING) return;
+        event.setCancelled(true);
     }
 
     @EventHandler
