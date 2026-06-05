@@ -57,11 +57,13 @@ public class FaithBlockGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
-
-        if (config.getSpawnLocation() == null) {
+        Location spawn = config.getSpawnLocation();
+        if (spawn == null) {
             plugin.getLogger().severe("信仰方块出生点未配置，游戏取消");
             return;
+        }
+        for (Player p : gameManager.getAlivePlayers()) {
+            p.teleport(spawn);
         }
 
         cacheRegionBounds();
@@ -72,8 +74,6 @@ public class FaithBlockGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-
-
         int interval = config.getChangeInterval();
         changeTask = new BukkitRunnable() {
             @Override

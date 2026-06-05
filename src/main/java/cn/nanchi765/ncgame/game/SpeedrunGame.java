@@ -71,13 +71,6 @@ public class SpeedrunGame implements Listener, IMinigame {
             Player p = players.get(i);
             Location loc = spawns.get(i % spawns.size());
             spawnPoints.put(p, loc.clone());
-
-            p.setGameMode(GameMode.ADVENTURE);
-            p.getInventory().clear();
-            p.setFoodLevel(20);
-            p.setSaturation(10);
-            p.setHealth(20);
-            p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
             p.teleport(loc);
         }
 

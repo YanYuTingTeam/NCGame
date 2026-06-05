@@ -47,8 +47,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
-
         List<Location> spawns = new ArrayList<>(config.getSpawnLocations());
         Collections.shuffle(spawns);
 
@@ -73,8 +71,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-
-
         for (Player p : gameManager.getAlivePlayers()) {
             p.setGameMode(GameMode.SURVIVAL);
             p.setAllowFlight(true);

@@ -24,6 +24,13 @@ public class Command implements CommandExecutor {
         }
         GameManager gameManager = plugin.getGameManager();
         switch (args[0].toLowerCase()) {
+            case "setcountdown":
+                if (!sender.hasPermission("ncgame.admin")) {
+                    sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");
+                    return true;
+                }
+                gameManager.getGamePlayingTask().setCountdown(Integer.parseInt(args[1]));
+                break;
             case "reload":
                 if (!sender.hasPermission("ncgame.admin")) {
                     sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");

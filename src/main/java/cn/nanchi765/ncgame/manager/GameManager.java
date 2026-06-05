@@ -87,6 +87,7 @@ public class GameManager {
         if (players.size() < plugin.getLobbyConfig().getRequiredPlayers()) {
             Bukkit.broadcastMessage(ChatColor.RED + "人数不足，本轮游戏取消，返回大厅...");
             pendingGames.clear();
+            onMinigameEnd();
             for (Player player : players) {
                 LobbyUtils.teleportToLobby(player);
             }

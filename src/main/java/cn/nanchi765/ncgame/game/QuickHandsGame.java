@@ -76,7 +76,6 @@ public class QuickHandsGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-
         for (Player p : gameManager.getAlivePlayers()) {
             p.setGameMode(GameMode.SURVIVAL);
         }

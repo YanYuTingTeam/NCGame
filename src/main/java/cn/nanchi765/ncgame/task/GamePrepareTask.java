@@ -56,7 +56,6 @@ public class GamePrepareTask implements Runnable {
             return;
         }
         if (countdown-- > 0) {
-
             if (countdown <= 10) {
                 String title = ChatColor.YELLOW + String.valueOf(countdown);
                 String subtitle = ChatColor.DARK_GREEN + gameConfig.subtitle();

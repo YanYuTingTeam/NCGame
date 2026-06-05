@@ -40,7 +40,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
         List<Location> spawns = new ArrayList<>(config.getSpawnLocations());
         Collections.shuffle(spawns);
         List<Player> shuffledPlayers = new ArrayList<>(gameManager.getAlivePlayers());
@@ -51,12 +50,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
             Location loc = (i < spawns.size()) ? spawns.get(i) : spawns.get(0);
             p.teleport(loc);
             spawnPoints.put(p, loc.clone());
-            p.setGameMode(GameMode.ADVENTURE);
-            p.getInventory().clear();
-            p.setFoodLevel(20);
-            p.setSaturation(10);
-            p.setHealth(20);
-            p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
         }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);

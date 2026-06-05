@@ -43,8 +43,6 @@ public class OneHitKillGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
-
         List<Location> spawns = new ArrayList<>(config.getSpawnLocations());
         if (spawns.isEmpty()) {
             throw new IllegalStateException(GAME_NAME + " 未配置出生点");
@@ -98,13 +96,6 @@ public class OneHitKillGame implements Listener, IMinigame {
     }
 
     private void initPlayer(Player player, Location spawn, ItemStack bow) {
-        player.setGameMode(GameMode.ADVENTURE);
-        player.getInventory().clear();
-        player.setFoodLevel(20);
-        player.setSaturation(10);
-        player.setHealth(20);
-        player.getActivePotionEffects().forEach(e -> player.removePotionEffect(e.getType()));
-
         player.teleport(spawn);
         player.getInventory().setItem(0, bow.clone());
         player.getInventory().setItem(9, new ItemStack(Material.ARROW));

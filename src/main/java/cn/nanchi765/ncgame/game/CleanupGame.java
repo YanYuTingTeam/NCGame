@@ -37,7 +37,6 @@ public class CleanupGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
         Location spawn = config.getSpawnLocation();
         if (spawn == null) {
             plugin.getLogger().severe("大扫除出生点未配置，游戏取消");
@@ -50,6 +49,7 @@ public class CleanupGame implements Listener, IMinigame {
         ItemStack shovel = createItem(config.getShovelMaterial(), config.getShovelName());
 
         for (Player p : gameManager.getPlayers()) {
+            p.teleport(spawn);
             p.getInventory().setItem(0, shears);
             p.getInventory().setItem(1, axe);
             p.getInventory().setItem(2, shovel);
@@ -68,7 +68,6 @@ public class CleanupGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-
         for (Player player : gameManager.getPlayers()) {
             player.setGameMode(GameMode.SURVIVAL);
         }
