@@ -19,6 +19,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -175,7 +176,7 @@ public class ChefMGame implements Listener, IMinigame {
                     }
                 }
             }
-        }.runTaskTimer(plugin, cc.refillDelay, cc.refillDelay);
+        }.runTaskTimer(plugin, 0, cc.refillDelay);
         chestTasks.put(loc, task);
     }
 
@@ -317,6 +318,14 @@ public class ChefMGame implements Listener, IMinigame {
         if (!isGameActive(this)) return;
         if (event instanceof EntityDamageByEntityEvent) return; // 交给专门处理器
         event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        Player player = (Player) event.getWhoClicked();
+        if (event.getClickedInventory() == player.getInventory() && event.getSlot() == 8) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
