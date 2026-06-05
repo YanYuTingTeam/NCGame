@@ -1,5 +1,8 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.game;
 
+import cn.nanchi765.ncgame.IMinigame;
+import cn.nanchi765.ncgame.NCGame;
+import cn.nanchi765.ncgame.config.SnakeConfig;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;

@@ -1,4 +1,4 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.config;
 
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;

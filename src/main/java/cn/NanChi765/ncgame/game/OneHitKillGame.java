@@ -1,6 +1,11 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.game;
 
+import cn.nanchi765.ncgame.IMinigame;
+import cn.nanchi765.ncgame.NCGame;
+import cn.nanchi765.ncgame.config.OneHitKillConfig;
 import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -10,6 +15,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -17,17 +24,15 @@ import org.bukkit.scoreboard.*;
 
 import java.util.*;
 
-public class SpeedrunGame implements Listener, IMinigame {
+public class OneHitKillGame implements Listener, IMinigame {
 
     private final JavaPlugin plugin;
-    private final SpeedrunConfig config;
+    private final OneHitKillConfig config;
     private final List<Player> players;
     private final List<Player> alivePlayers;
-    private final List<Player> finishedPlayers;
     private final List<Player> eliminatedPlayers;
     private final List<Player> lateSpectators = new ArrayList<>();
     private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
-    private final Map<Player, Location> spawnPoints = new HashMap<>();
     private GameState state;
     private int prepareTimer;
     private int gameTimer;
@@ -37,12 +42,11 @@ public class SpeedrunGame implements Listener, IMinigame {
         WAITING, PREPARE, PLAYING, ENDED
     }
 
-    public SpeedrunGame(JavaPlugin plugin, SpeedrunConfig config, List<Player> players) {
+    public OneHitKillGame(JavaPlugin plugin, OneHitKillConfig config, List<Player> players) {
         this.plugin = plugin;
         this.config = config;
         this.players = new ArrayList<>(players);
         this.alivePlayers = new ArrayList<>(players);
-        this.finishedPlayers = new ArrayList<>();
         this.eliminatedPlayers = new ArrayList<>();
         this.state = GameState.WAITING;
     }
@@ -60,13 +64,27 @@ public class SpeedrunGame implements Listener, IMinigame {
             Player p = shuffledPlayers.get(i);
             Location loc = (i < spawns.size()) ? spawns.get(i) : spawns.get(0);
             p.teleport(loc);
-            spawnPoints.put(p, loc.clone());
             p.setGameMode(GameMode.ADVENTURE);
             p.getInventory().clear();
             p.setFoodLevel(20);
             p.setSaturation(10);
             p.setHealth(20);
             p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
+        }
+
+        // 发放弓和箭
+        ItemStack bow = new ItemStack(Material.BOW, 1);
+        ItemMeta bowMeta = bow.getItemMeta();
+        bowMeta.setDisplayName(ChatColor.RED + "一箭必杀");
+        bow.setItemMeta(bowMeta);
+        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 5);
+        bow.addEnchantment(Enchantment.ARROW_INFINITE, 1);
+
+        ItemStack arrow = new ItemStack(Material.ARROW, 1);
+
+        for (Player p : players) {
+            p.getInventory().setItem(0, bow);
+            p.getInventory().setItem(9, arrow);
         }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -82,9 +100,9 @@ public class SpeedrunGame implements Listener, IMinigame {
             public void run() {
                 if (state != GameState.PREPARE) { cancel(); return; }
                 if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
-                if (prepareTimer <= 5) { // 最后5秒中央倒计时
-                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer);
-                    String subtitle = ChatColor.DARK_GREEN + "全速奔跑，第一个到达终点！";
+                if (prepareTimer <= 10) {
+                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
+                    String subtitle = ChatColor.DARK_GREEN + "一箭决胜负，活到最后！";
                     for (Player p : players) {
                         p.sendTitle(title, subtitle, 0, 25, 5);
                         if (config.isCountdownSoundEnabled())
@@ -99,22 +117,13 @@ public class SpeedrunGame implements Listener, IMinigame {
 
     private void startPlayingPhase() {
         state = GameState.PLAYING;
-        for (Player p : players) p.setGameMode(GameMode.ADVENTURE);
+        for (Player p : players) p.setGameMode(GameMode.SURVIVAL);
         gameTimer = config.getGameTime();
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (state != GameState.PLAYING) { cancel(); return; }
                 if (gameTimer > 0) gameTimer--;
-                if (gameTimer <= 5 && gameTimer > 0) {
-                    String title = ChatColor.YELLOW + String.valueOf(gameTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "游戏即将结束";
-                    for (Player p : players) {
-                        p.sendTitle(title, subtitle, 0, 20, 10);
-                        if (config.isCountdownSoundEnabled())
-                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
-                    }
-                }
                 if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
                     endGame();
                     cancel();
@@ -137,7 +146,7 @@ public class SpeedrunGame implements Listener, IMinigame {
 
         for (Player p : players) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("speedrun", "dummy");
+            Objective obj = board.registerNewObjective("onehit", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -154,7 +163,7 @@ public class SpeedrunGame implements Listener, IMinigame {
 
         for (Player p : lateSpectators) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("speedrun", "dummy");
+            Objective obj = board.registerNewObjective("onehit", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -185,20 +194,22 @@ public class SpeedrunGame implements Listener, IMinigame {
     private void endGame() {
         state = GameState.ENDED;
 
+        List<Player> ranking = new ArrayList<>(eliminatedPlayers);
+        ranking.addAll(alivePlayers);
         Map<Player, Integer> playerRank = new LinkedHashMap<>();
         int rank = 1;
-        for (Player p : finishedPlayers) {
-            playerRank.put(p, rank++);
+        if (!alivePlayers.isEmpty()) {
+            for (Player p : alivePlayers) playerRank.put(p, 1);
+            rank = 2;
         }
+        List<Player> revElim = new ArrayList<>(eliminatedPlayers);
+        Collections.reverse(revElim);
+        for (Player p : revElim) playerRank.put(p, rank++);
 
         Map<Player, Integer> scoreAdd = new HashMap<>();
         for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
             int r = entry.getValue();
-            int add = 0;
-            if (r == 1) add = 10;
-            else if (r == 2) add = 7;
-            else if (r == 3) add = 5;
-            else if (r == 4) add = 1;
+            int add = r == 1 ? 10 : r == 2 ? 7 : r == 3 ? 5 : r == 4 ? 1 : 0;
             scoreAdd.put(entry.getKey(), add);
         }
 
@@ -209,28 +220,20 @@ public class SpeedrunGame implements Listener, IMinigame {
         }
 
         for (Player p : players) {
-            if (finishedPlayers.contains(p)) {
-                int myRank = playerRank.get(p);
-                int myAdd = scoreAdd.getOrDefault(p, 0);
-                p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
-            } else {
-                p.sendMessage(ChatColor.RED + "你没有完成本轮游戏，无排名。");
-            }
+            int myRank = playerRank.getOrDefault(p, players.size());
+            int myAdd = scoreAdd.getOrDefault(p, 0);
+            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
         }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 急速酷跑 排行榜 =====");
-        if (finishedPlayers.isEmpty()) {
-            Bukkit.broadcastMessage(ChatColor.RED + "无人完成本轮游戏！");
-        } else {
-            int count = 0;
-            for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-                if (count >= 4) break;
-                Player p = entry.getKey();
-                int r = entry.getValue();
-                int add = scoreAdd.getOrDefault(p, 0);
-                Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
-                count++;
-            }
+        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 一箭必杀 排行榜 =====");
+        int count = 0;
+        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
+            if (count >= 4) break;
+            Player p = entry.getKey();
+            int r = entry.getValue();
+            int add = scoreAdd.getOrDefault(p, 0);
+            Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
+            count++;
         }
 
         cleanupAndReturnLobby();
@@ -256,9 +259,7 @@ public class SpeedrunGame implements Listener, IMinigame {
         for (Player p : players) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
         for (Player p : lateSpectators) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
-        if (plugin instanceof NCGame) {
-            ((NCGame) plugin).onMinigameEnd();
-        }
+        if (plugin instanceof NCGame) ((NCGame) plugin).onMinigameEnd();
     }
 
     @Override
@@ -288,71 +289,34 @@ public class SpeedrunGame implements Listener, IMinigame {
     }
 
     // ========== 事件处理 ==========
-    @EventHandler
-    public void onMove(PlayerMoveEvent event) {
-        Player player = event.getPlayer();
-        if (!players.contains(player) && !lateSpectators.contains(player)) return;
 
-        // 准备阶段锁定
-        if (state == GameState.PREPARE && players.contains(player)) {
-            Location spawn = spawnPoints.get(player);
-            if (spawn != null && player.getLocation().distanceSquared(spawn) > 0.01) {
-                player.teleport(spawn);
-            }
+    @EventHandler
+    public void onDamageByEntity(EntityDamageByEntityEvent event) {
+        if (state != GameState.PLAYING) {
+            if (event.getEntity() instanceof Player) event.setCancelled(true);
             return;
         }
+        if (!(event.getEntity() instanceof Player)) return;
+        Player victim = (Player) event.getEntity();
+        if (!players.contains(victim)) return;
 
-        if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
-            player.setGameMode(GameMode.SPECTATOR);
-        }
-
-        // 意外掉落传送回出生点
-        if (players.contains(player) && state == GameState.PLAYING && alivePlayers.contains(player)) {
-            if (player.getLocation().getY() < 0.0) {
-                Location spawn = spawnPoints.get(player);
-                if (spawn != null) {
-                    player.teleport(spawn);
-                    player.sendMessage(ChatColor.RED + "你掉下去了，已传送回出生点！");
+        // 只允许箭矢伤害
+        if (event.getDamager() instanceof Arrow) {
+            Arrow arrow = (Arrow) event.getDamager();
+            if (arrow.getShooter() instanceof Player) {
+                Player shooter = (Player) arrow.getShooter();
+                // 不能射杀自己
+                if (shooter.equals(victim)) {
+                    event.setCancelled(true);
+                    return;
                 }
-                return;
-            }
-        }
-
-        // 胜利区域检测
-        if (players.contains(player) && state == GameState.PLAYING && alivePlayers.contains(player)) {
-            if (!finishedPlayers.contains(player) && config.isInWinRegion(player.getLocation())) {
-                finishedPlayers.add(player);
-                player.setGameMode(GameMode.SPECTATOR);
-                player.teleport(config.getSpectatorSpawn());
-                String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedPlayers.size() + " 名）";
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.sendTitle("", msg, 10, 70, 10);
-                }
-                if (finishedPlayers.size() == alivePlayers.size()) {
-                    endGame();
-                }
-                return;
-            }
-        }
-
-        // 旁观者区域限制
-        if (lateSpectators.contains(player) || finishedPlayers.contains(player) || !alivePlayers.contains(player)) {
-            Location loc = player.getLocation();
-            Location center = config.getSpectatorRegionCenter();
-            if (center != null && loc.getWorld().equals(center.getWorld())) {
-                double radius = config.getSpectatorRegionRadius();
-                if (loc.distanceSquared(center) > radius * radius) {
-                    player.teleport(config.getSpectatorSpawn());
+                if (players.contains(shooter) && alivePlayers.contains(victim)) {
+                    eliminatePlayer(victim);
+                    event.setDamage(0); // 避免死亡动画
                 }
             }
         }
-    }
-
-    @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true); // 禁止所有其他伤害
     }
 
     @EventHandler
@@ -380,11 +344,30 @@ public class SpeedrunGame implements Listener, IMinigame {
     }
 
     @EventHandler
+    public void onMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        if (!players.contains(player) && !lateSpectators.contains(player)) return;
+
+        if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
+            player.setGameMode(GameMode.SPECTATOR);
+        }
+
+        if (!alivePlayers.contains(player) || lateSpectators.contains(player)) {
+            Location loc = player.getLocation();
+            Location center = config.getSpectatorRegionCenter();
+            if (center != null && loc.getWorld().equals(center.getWorld())) {
+                double radius = config.getSpectatorRegionRadius();
+                if (loc.distanceSquared(center) > radius * radius) {
+                    player.teleport(config.getSpectatorSpawn());
+                }
+            }
+        }
+    }
+
+    @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        if (players.contains(player)) {
-            eliminatePlayer(player);
-        }
+        if (players.contains(player)) eliminatePlayer(player);
         if (lateSpectators.contains(player)) {
             lateSpectators.remove(player);
             BukkitTask task = spectatorWatchTasks.remove(player);
@@ -399,7 +382,7 @@ public class SpeedrunGame implements Listener, IMinigame {
         player.teleport(config.getSpectatorSpawn());
 
         for (Player p : players) {
-            p.sendTitle("", ChatColor.AQUA + player.getName() + " 被淘汰了", 0, 40, 10);
+            p.sendTitle("", ChatColor.AQUA + player.getName() + " 被一箭射杀", 0, 40, 10);
         }
 
         if (alivePlayers.size() < getRequiredPlayers()) {

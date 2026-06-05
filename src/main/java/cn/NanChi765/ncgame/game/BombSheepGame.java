@@ -1,16 +1,23 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.game;
 
+import cn.nanchi765.ncgame.IMinigame;
+import cn.nanchi765.ncgame.NCGame;
+import cn.nanchi765.ncgame.config.BombSheepConfig;
 import org.bukkit.*;
-import org.bukkit.entity.Player;
+import org.bukkit.block.Block;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,33 +27,36 @@ import org.bukkit.scoreboard.*;
 
 import java.util.*;
 
-public class CleanupGame implements Listener, IMinigame {
+public class BombSheepGame implements Listener, IMinigame {
 
     private final JavaPlugin plugin;
-    private final CleanupConfig config;
+    private final BombSheepConfig config;
     private final List<Player> players;
+    private final Map<Player, Integer> woolScores = new HashMap<>();
     private final List<Player> alivePlayers;
     private final List<Player> eliminatedPlayers;
-    private final Map<Player, Integer> blockCounts = new HashMap<>();
     private final List<Player> lateSpectators = new ArrayList<>();
     private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
+    private final List<Sheep> activeSheep = new ArrayList<>();
     private GameState state;
     private int prepareTimer;
     private int gameTimer;
     private BukkitTask gameTask;
+    private BukkitTask sheepSpawnTask;
+    private Random random = new Random();
 
     private enum GameState {
         WAITING, PREPARE, PLAYING, ENDED
     }
 
-    public CleanupGame(JavaPlugin plugin, CleanupConfig config, List<Player> players) {
+    public BombSheepGame(JavaPlugin plugin, BombSheepConfig config, List<Player> players) {
         this.plugin = plugin;
         this.config = config;
         this.players = new ArrayList<>(players);
         this.alivePlayers = new ArrayList<>(players);
         this.eliminatedPlayers = new ArrayList<>();
         for (Player p : players) {
-            blockCounts.put(p, 0);
+            woolScores.put(p, 0);
         }
         this.state = GameState.WAITING;
     }
@@ -55,16 +65,16 @@ public class CleanupGame implements Listener, IMinigame {
     public void start() {
         if (plugin instanceof NCGame) ((NCGame) plugin).stopLobbyScoreboard();
 
-        Location spawn = config.getSpawnLocation();
-        if (spawn == null) {
-            plugin.getLogger().severe("大扫除出生点未配置，游戏取消");
-            endGameDirectly();
-            return;
-        }
+        List<Location> spawns = new ArrayList<>(config.getSpawnLocations());
+        Collections.shuffle(spawns);
+        List<Player> shuffledPlayers = new ArrayList<>(players);
+        Collections.shuffle(shuffledPlayers);
 
-        for (Player p : players) {
-            p.teleport(spawn);
-            p.setGameMode(GameMode.ADVENTURE);
+        for (int i = 0; i < shuffledPlayers.size(); i++) {
+            Player p = shuffledPlayers.get(i);
+            Location loc = (i < spawns.size()) ? spawns.get(i) : spawns.get(0);
+            p.teleport(loc);
+            p.setGameMode(GameMode.ADVENTURE);   // 全程冒险模式
             p.getInventory().clear();
             p.setFoodLevel(20);
             p.setSaturation(10);
@@ -72,15 +82,12 @@ public class CleanupGame implements Listener, IMinigame {
             p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
         }
 
-        // 发放工具
-        ItemStack shears = createItem(config.getShearsMaterial(), config.getShearsName());
-        ItemStack axe = createItem(config.getAxeMaterial(), config.getAxeName());
-        ItemStack shovel = createItem(config.getShovelMaterial(), config.getShovelName());
-
+        ItemStack shears = new ItemStack(Material.SHEARS, 1);
+        ItemMeta meta = shears.getItemMeta();
+        meta.setDisplayName(ChatColor.GREEN + "剪毛剪刀");
+        shears.setItemMeta(meta);
         for (Player p : players) {
             p.getInventory().setItem(0, shears);
-            p.getInventory().setItem(1, axe);
-            p.getInventory().setItem(2, shovel);
         }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -98,7 +105,7 @@ public class CleanupGame implements Listener, IMinigame {
                 if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
                 if (prepareTimer <= 10) {
                     String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "破坏方块，收集最多积分！";
+                    String subtitle = ChatColor.DARK_GREEN + "剪羊毛，但要小心炸弹羊！";
                     for (Player p : players) {
                         p.sendTitle(title, subtitle, 0, 25, 5);
                         if (config.isCountdownSoundEnabled())
@@ -111,34 +118,37 @@ public class CleanupGame implements Listener, IMinigame {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    private ItemStack createItem(Material material, String name) {
-        ItemStack item = new ItemStack(material, 1);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(name);
-        item.setItemMeta(meta);
-        return item;
-    }
-
     private void startPlayingPhase() {
         state = GameState.PLAYING;
-        for (Player p : players) {
-            p.setGameMode(GameMode.SURVIVAL);
-        }
+        for (Player p : players) p.setGameMode(GameMode.ADVENTURE); // 冒险模式
         gameTimer = config.getGameTime();
+
+        sheepSpawnTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (state != GameState.PLAYING) {
+                    cancel();
+                    return;
+                }
+                activeSheep.removeIf(sheep -> sheep == null || !sheep.isValid());
+                int max = config.getMaxSheep();
+                while (activeSheep.size() < max) {
+                    Location loc = findValidSpawnLocation();
+                    if (loc == null) break;
+                    Sheep sheep = loc.getWorld().spawn(loc, Sheep.class);
+                    sheep.setColor(DyeColor.WHITE);
+                    sheep.setCustomName("jeb_");
+                    sheep.setCustomNameVisible(false);
+                    activeSheep.add(sheep);
+                }
+            }
+        }.runTaskTimer(plugin, 0L, config.getSpawnInterval());
+
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (state != GameState.PLAYING) { cancel(); return; }
                 if (gameTimer > 0) gameTimer--;
-                if (gameTimer <= 5 && gameTimer > 0) {
-                    String title = ChatColor.YELLOW + String.valueOf(gameTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "游戏即将结束";
-                    for (Player p : players) {
-                        p.sendTitle(title, subtitle, 0, 20, 10);
-                        if (config.isCountdownSoundEnabled())
-                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
-                    }
-                }
                 if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
                     endGame();
                     cancel();
@@ -147,6 +157,31 @@ public class CleanupGame implements Listener, IMinigame {
                 updateScoreboard(gameTimer, config.getGameTime());
             }
         }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    private Location findValidSpawnLocation() {
+        Location pos1 = config.getSheepRegionPos1();
+        Location pos2 = config.getSheepRegionPos2();
+        if (pos1 == null || pos2 == null) return null;
+        World world = pos1.getWorld();
+        double minX = Math.min(pos1.getX(), pos2.getX());
+        double maxX = Math.max(pos1.getX(), pos2.getX());
+        int minY = Math.min(pos1.getBlockY(), pos2.getBlockY());
+        int maxY = Math.max(pos1.getBlockY(), pos2.getBlockY());
+        double minZ = Math.min(pos1.getZ(), pos2.getZ());
+        double maxZ = Math.max(pos1.getZ(), pos2.getZ());
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            double x = minX + random.nextDouble() * (maxX - minX);
+            double z = minZ + random.nextDouble() * (maxZ - minZ);
+            for (int y = maxY; y >= minY; y--) {
+                Block block = world.getBlockAt((int)Math.floor(x), y, (int)Math.floor(z));
+                if (block.getType().isSolid()) {
+                    return block.getLocation().add(0.5, 1, 0.5);
+                }
+            }
+        }
+        return null;
     }
 
     private int getRequiredPlayers() {
@@ -161,7 +196,7 @@ public class CleanupGame implements Listener, IMinigame {
 
         for (Player p : players) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("cleanup", "dummy");
+            Objective obj = board.registerNewObjective("bombsheep", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -178,7 +213,7 @@ public class CleanupGame implements Listener, IMinigame {
 
         for (Player p : lateSpectators) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("cleanup", "dummy");
+            Objective obj = board.registerNewObjective("bombsheep", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -208,9 +243,17 @@ public class CleanupGame implements Listener, IMinigame {
 
     private void endGame() {
         state = GameState.ENDED;
+        for (Sheep s : activeSheep) { if (s != null && s.isValid()) s.remove(); }
+        activeSheep.clear();
+        if (sheepSpawnTask != null) sheepSpawnTask.cancel();
 
-        // 按破坏数量排序：多的在前
-        List<Map.Entry<Player, Integer>> sorted = new ArrayList<>(blockCounts.entrySet());
+        // 仅统计存活玩家的羊毛数进行排名（淘汰玩家不参与排名）
+        Map<Player, Integer> aliveWoolScores = new HashMap<>();
+        for (Player p : alivePlayers) {
+            aliveWoolScores.put(p, woolScores.getOrDefault(p, 0));
+        }
+
+        List<Map.Entry<Player, Integer>> sorted = new ArrayList<>(aliveWoolScores.entrySet());
         sorted.sort(Map.Entry.<Player, Integer>comparingByValue().reversed());
 
         Map<Player, Integer> playerRank = new LinkedHashMap<>();
@@ -221,14 +264,9 @@ public class CleanupGame implements Listener, IMinigame {
 
         Map<Player, Integer> scoreAdd = new HashMap<>();
         for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            Player p = entry.getKey();
             int r = entry.getValue();
-            int add = 0;
-            if (r == 1) add = 10;
-            else if (r == 2) add = 7;
-            else if (r == 3) add = 5;
-            else if (r == 4) add = 1;
-            scoreAdd.put(p, add);
+            int add = r == 1 ? 10 : r == 2 ? 7 : r == 3 ? 5 : r == 4 ? 1 : 0;
+            scoreAdd.put(entry.getKey(), add);
         }
 
         if (plugin instanceof NCGame) {
@@ -238,36 +276,41 @@ public class CleanupGame implements Listener, IMinigame {
             }
         }
 
+        // 向玩家发送结果
         for (Player p : players) {
-            int myRank = playerRank.getOrDefault(p, players.size());
-            int myAdd = scoreAdd.getOrDefault(p, 0);
-            int blocks = blockCounts.getOrDefault(p, 0);
-            p.sendMessage(ChatColor.GREEN + "你破坏了 " + blocks + " 个方块，获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
+            if (alivePlayers.contains(p)) {
+                int myWool = woolScores.getOrDefault(p, 0);
+                int myRank = playerRank.get(p);
+                int myAdd = scoreAdd.getOrDefault(p, 0);
+                p.sendMessage(ChatColor.GREEN + "你收集了 " + myWool + " 个羊毛，第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
+            } else {
+                p.sendMessage(ChatColor.RED + "你已被淘汰，不参与排名。");
+            }
         }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 大扫除 排行榜 =====");
-        int count = 0;
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (count >= 4) break;
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            int add = scoreAdd.getOrDefault(p, 0);
-            int blocks = blockCounts.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (破坏 " + blocks + " 块) (+" + add + "积分)");
-            count++;
+        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 炸弹羊 排行榜 =====");
+        if (aliveWoolScores.isEmpty()) {
+            Bukkit.broadcastMessage(ChatColor.RED + "无存活玩家！");
+        } else {
+            int count = 0;
+            for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
+                if (count >= 4) break;
+                Player p = entry.getKey();
+                int r = entry.getValue();
+                int add = scoreAdd.getOrDefault(p, 0);
+                int wool = woolScores.getOrDefault(p, 0);
+                Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (羊毛 " + wool + ") (+" + add + "积分)");
+                count++;
+            }
         }
 
-        cleanupAndReturnLobby();
-    }
-
-    private void endGameDirectly() {
-        state = GameState.ENDED;
         cleanupAndReturnLobby();
     }
 
     private void cleanupAndReturnLobby() {
         HandlerList.unregisterAll(this);
         if (gameTask != null) gameTask.cancel();
+        if (sheepSpawnTask != null) sheepSpawnTask.cancel();
 
         for (BukkitTask task : spectatorWatchTasks.values()) task.cancel();
         spectatorWatchTasks.clear();
@@ -285,9 +328,7 @@ public class CleanupGame implements Listener, IMinigame {
         for (Player p : players) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
         for (Player p : lateSpectators) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
-        if (plugin instanceof NCGame) {
-            ((NCGame) plugin).onMinigameEnd();
-        }
+        if (plugin instanceof NCGame) ((NCGame) plugin).onMinigameEnd();
     }
 
     @Override
@@ -309,44 +350,55 @@ public class CleanupGame implements Listener, IMinigame {
                         spectatorWatchTasks.remove(player);
                         return;
                     }
-                    if (player.getGameMode() != GameMode.SPECTATOR) {
-                        player.setGameMode(GameMode.SPECTATOR);
-                    }
+                    if (player.getGameMode() != GameMode.SPECTATOR) player.setGameMode(GameMode.SPECTATOR);
                 }
             }.runTaskTimer(plugin, 0L, 20L);
             spectatorWatchTasks.put(player, task);
         }
     }
 
+    // ========== 事件处理 ==========
+
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onShear(PlayerShearEntityEvent event) {
         if (state != GameState.PLAYING) {
             event.setCancelled(true);
             return;
         }
         Player player = event.getPlayer();
-        if (!players.contains(player) || !alivePlayers.contains(player)) return;
+        if (!players.contains(player) || !alivePlayers.contains(player)) return; // 只有存活玩家可以剪
 
-        // 高度限制：低于或等于配置的 Y 轴禁止破坏
-        int limitY = config.getBreakLimitY();
-        if (limitY >= 0 && event.getBlock().getY() <= limitY) {
-            event.setCancelled(true);
-            if (config.isDebugEnabled()) {
-                player.sendMessage("§c此高度禁止破坏 (Y ≤ " + limitY + ")");
+        if (event.getEntity() instanceof Sheep) {
+            Sheep sheep = (Sheep) event.getEntity();
+            if (!activeSheep.contains(sheep)) return;
+
+            if (random.nextDouble() < config.getExplodeChance()) {
+                player.getWorld().createExplosion(sheep.getLocation(), (float) config.getExplosionPower(), true);
+                player.setHealth(Math.max(0, player.getHealth() - config.getExplodeDamage()));
+                player.sendMessage(ChatColor.RED + "炸弹羊爆炸了！你受到了伤害。");
+                sheep.remove();
+                activeSheep.remove(sheep);
+                event.setCancelled(true);
+                return;
             }
-            return;
+
+            // 正常剪毛，掉落羊毛
+            player.playSound(player.getLocation(), Sound.ENTITY_SHEEP_SHEAR, 1.0f, 1.0f);
+            activeSheep.remove(sheep);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (sheep.isValid()) sheep.remove();
+            });
         }
+    }
 
-        Material type = event.getBlock().getType();
-        if (!config.getBreakableBlocks().contains(type.name())) {
-            if (config.isDebugEnabled()) {
-                player.sendMessage("§c无法破坏: " + type.name());
-            }
-            event.setCancelled(true);
-        } else {
-            event.setDropItems(false);
-            blockCounts.merge(player, 1, Integer::sum);
-            player.sendTitle("", ChatColor.GREEN + "你获得了 " + ChatColor.YELLOW + "1" + ChatColor.GREEN + " 分", 5, 20, 5);
+    @EventHandler
+    public void onPickup(PlayerPickupItemEvent event) {
+        if (state != GameState.PLAYING) return;
+        Player player = event.getPlayer();
+        if (!players.contains(player) || !alivePlayers.contains(player)) return; // 只有存活玩家捡羊毛计分
+        ItemStack item = event.getItem().getItemStack();
+        if (item.getType() == Material.WOOL && item.getDurability() == 0) {
+            woolScores.merge(player, item.getAmount(), Integer::sum);
         }
     }
 
@@ -355,18 +407,22 @@ public class CleanupGame implements Listener, IMinigame {
         Player player = event.getPlayer();
         if (!players.contains(player) && !lateSpectators.contains(player)) return;
 
-        // 旁观者模式保护
         if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
             player.setGameMode(GameMode.SPECTATOR);
         }
 
-        // 旁观者区域限制
-        if (lateSpectators.contains(player)) {
+        if (alivePlayers.contains(player) && state == GameState.PLAYING) {
+            if (player.getLocation().getY() < config.getDeathY()) {
+                eliminatePlayer(player);
+                return;
+            }
+        }
+
+        if (!alivePlayers.contains(player) || lateSpectators.contains(player)) {
             Location loc = player.getLocation();
             Location center = config.getSpectatorRegionCenter();
             if (center != null && loc.getWorld().equals(center.getWorld())) {
-                double radius = config.getSpectatorRegionRadius();
-                if (loc.distanceSquared(center) > radius * radius) {
+                if (loc.distanceSquared(center) > config.getSpectatorRegionRadius() * config.getSpectatorRegionRadius()) {
                     player.teleport(config.getSpectatorSpawn());
                 }
             }
@@ -374,21 +430,40 @@ public class CleanupGame implements Listener, IMinigame {
     }
 
     @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
+    public void onDamageByEntity(EntityDamageByEntityEvent event) {
+        // 禁止玩家间伤害
+        if (state == GameState.PREPARE || state == GameState.PLAYING) {
+            if (event.getEntity() instanceof Player) event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        // 羊免疫摔落伤害
+        if (event.getEntity() instanceof Sheep) {
+            if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+                event.setCancelled(true);
+            }
+        }
+        // 玩家禁止所有伤害（爆炸伤害已在 onShear 中手动扣除）
+        if (event.getEntity() instanceof Player) {
+            if (state == GameState.PREPARE || state == GameState.PLAYING) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
         if (state == GameState.PREPARE || state == GameState.PLAYING) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
-    public void onFallDamage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player) && (state == GameState.PREPARE || state == GameState.PLAYING)) {
-                if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                    event.setCancelled(true);
-                }
-            }
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (state == GameState.PREPARE || state == GameState.PLAYING) {
+            event.setCancelled(true);
         }
     }
 
@@ -407,9 +482,7 @@ public class CleanupGame implements Listener, IMinigame {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        if (players.contains(player)) {
-            eliminatePlayer(player);
-        }
+        if (players.contains(player)) eliminatePlayer(player);
         if (lateSpectators.contains(player)) {
             lateSpectators.remove(player);
             BukkitTask task = spectatorWatchTasks.remove(player);

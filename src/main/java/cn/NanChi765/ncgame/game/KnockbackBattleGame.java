@@ -1,37 +1,41 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.game;
 
+import cn.nanchi765.ncgame.IMinigame;
+import cn.nanchi765.ncgame.NCGame;
+import cn.nanchi765.ncgame.config.KnockbackBattleConfig;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.*;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
-public class SnowSpleefGame implements Listener, IMinigame {
+public class KnockbackBattleGame implements Listener, IMinigame {
 
     private final JavaPlugin plugin;
-    private final SnowSpleefConfig config;
+    private final KnockbackBattleConfig config;
     private final List<Player> players;
     private final List<Player> alivePlayers;
     private final List<Player> eliminatedPlayers;
     private final List<Player> lateSpectators = new ArrayList<>();
     private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
+    private final Map<UUID, Long> lastDoubleJumpTimes = new HashMap<>();
+    private final Map<UUID, Boolean> hasDoubleJumped = new HashMap<>();
     private GameState state;
     private int prepareTimer;
     private int gameTimer;
@@ -41,7 +45,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
         WAITING, PREPARE, PLAYING, ENDED
     }
 
-    public SnowSpleefGame(JavaPlugin plugin, SnowSpleefConfig config, List<Player> players) {
+    public KnockbackBattleGame(JavaPlugin plugin, KnockbackBattleConfig config, List<Player> players) {
         this.plugin = plugin;
         this.config = config;
         this.players = new ArrayList<>(players);
@@ -68,9 +72,18 @@ public class SnowSpleefGame implements Listener, IMinigame {
             p.setFoodLevel(20);
             p.setSaturation(10);
             p.setHealth(20);
-            p.setFireTicks(0);
+            p.setAllowFlight(false); // 初始禁止飞行
+            p.setFlying(false);
             p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
         }
+
+        // 发放击退棍
+        ItemStack stick = new ItemStack(Material.STICK, 1);
+        ItemMeta meta = stick.getItemMeta();
+        meta.setDisplayName(ChatColor.RED + "击退棒");
+        stick.setItemMeta(meta);
+        stick.addUnsafeEnchantment(Enchantment.KNOCKBACK, 10);
+        for (Player p : players) p.getInventory().setItem(0, stick);
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         startPreparePhase();
@@ -80,9 +93,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
         state = GameState.PREPARE;
         prepareTimer = config.getPrepareTime();
 
-        ItemStack shovel = createShovel();
-        for (Player p : players) p.getInventory().setItem(0, shovel);
-
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -90,7 +100,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
                 if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
                 if (prepareTimer <= 10) {
                     String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "挖掉或使用雪球打掉雪块，将其他人砸下去！";
+                    String subtitle = ChatColor.DARK_GREEN + "利用击退棍把对手打下平台！";
                     for (Player p : players) {
                         p.sendTitle(title, subtitle, 0, 25, 5);
                         if (config.isCountdownSoundEnabled())
@@ -103,20 +113,15 @@ public class SnowSpleefGame implements Listener, IMinigame {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    private ItemStack createShovel() {
-        ItemStack shovel = new ItemStack(Material.DIAMOND_SPADE, 1);
-        ItemMeta meta = shovel.getItemMeta();
-        meta.setDisplayName(ChatColor.AQUA + "雪铲");
-        shovel.setItemMeta(meta);
-        Enchantment ench = config.getShovelEnchantmentType();
-        if (ench != null) shovel.addUnsafeEnchantment(ench, config.getShovelEnchantmentLevel());
-        else shovel.addUnsafeEnchantment(Enchantment.DIG_SPEED, 5);
-        return shovel;
-    }
-
     private void startPlayingPhase() {
         state = GameState.PLAYING;
-        for (Player p : players) p.setGameMode(GameMode.SURVIVAL);
+        for (Player p : players) {
+            p.setGameMode(GameMode.SURVIVAL);
+            // 启用二段跳（开启allowFlight但不飞）
+            p.setAllowFlight(true);
+            p.setFlying(false);
+            hasDoubleJumped.put(p.getUniqueId(), false); // 初始化跳跃状态
+        }
         gameTimer = config.getGameTime();
         gameTask = new BukkitRunnable() {
             @Override
@@ -134,9 +139,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
     }
 
     private int getRequiredPlayers() {
-        if (plugin instanceof NCGame) {
-            return ((NCGame) plugin).getLobbyConfig().getRequiredPlayers();
-        }
+        if (plugin instanceof NCGame) return ((NCGame) plugin).getLobbyConfig().getRequiredPlayers();
         return 2;
     }
 
@@ -147,7 +150,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
         for (Player p : players) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("spleef", "dummy");
+            Objective obj = board.registerNewObjective("kb", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -164,7 +167,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
         for (Player p : lateSpectators) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("spleef", "dummy");
+            Objective obj = board.registerNewObjective("kb", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -226,7 +229,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
             p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
         }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 掘一死战 排行榜 =====");
+        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 击退战 排行榜 =====");
         int count = 0;
         for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
             if (count >= 4) break;
@@ -248,6 +251,8 @@ public class SnowSpleefGame implements Listener, IMinigame {
         spectatorWatchTasks.clear();
 
         for (Player p : players) {
+            p.setAllowFlight(false);
+            p.setFlying(false);
             p.getInventory().clear();
             p.getInventory().setArmorContents(null);
             p.updateInventory();
@@ -291,73 +296,44 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     // ========== 事件处理 ==========
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        if (state != GameState.PLAYING) {
-            event.setCancelled(true);
-            return;
-        }
-        Player player = event.getPlayer();
-        if (!players.contains(player)) return;
-        Material type = event.getBlock().getType();
-        if (!config.getBreakableBlocks().contains(type.name())) {
-            event.setCancelled(true);
-        } else {
-            event.setDropItems(false);
-            int amount = type == Material.SNOW_BLOCK ? 4 : 1;
-            player.getInventory().addItem(new ItemStack(Material.SNOW_BALL, amount));
-        }
-    }
-
-    @EventHandler
-    public void onProjectileHit(ProjectileHitEvent event) {
-        if (state != GameState.PLAYING) return;
-        if (!(event.getEntity() instanceof Snowball)) return;
-        Snowball snowball = (Snowball) event.getEntity();
-        if (!(snowball.getShooter() instanceof Player)) return;
-        Player shooter = (Player) snowball.getShooter();
-        if (!players.contains(shooter)) return;
-        if (event.getHitBlock() != null) {
-            Material type = event.getHitBlock().getType();
-            if (config.getBreakableBlocks().contains(type.name())) {
-                event.getHitBlock().breakNaturally(new ItemStack(Material.SNOW_BALL));
-            }
-        }
-    }
-
-    @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (!players.contains(player) && !lateSpectators.contains(player)) return;
 
-        if (lateSpectators.contains(player)) {
-            if (player.getGameMode() != GameMode.SPECTATOR) player.setGameMode(GameMode.SPECTATOR);
+        // 旁观者模式保护
+        if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
+            player.setGameMode(GameMode.SPECTATOR);
         }
 
-        if (players.contains(player)) {
-            if (alivePlayers.contains(player) && (state == GameState.PLAYING || state == GameState.PREPARE)) {
-                if (player.getLocation().getY() < config.getDeathY()) {
-                    eliminatePlayer(player);
-                    return;
-                }
-            }
-            if (!alivePlayers.contains(player)) {
-                Location loc = player.getLocation();
-                Location center = config.getSpectatorRegionCenter();
-                if (center != null && loc.getWorld().equals(center.getWorld())) {
-                    double radius = config.getSpectatorRegionRadius();
-                    if (loc.distanceSquared(center) > radius * radius) {
-                        player.teleport(config.getSpectatorSpawn());
-                    }
-                }
+        // 存活玩家掉落死亡
+        if (alivePlayers.contains(player) && (state == GameState.PLAYING)) {
+            if (player.getLocation().getY() < config.getDeathY()) {
+                eliminatePlayer(player);
+                return;
             }
         }
 
-        if (lateSpectators.contains(player)) {
+        // 二段跳落地检测（仅在游戏进行中且存活）
+        if (state == GameState.PLAYING && alivePlayers.contains(player)) {
+            UUID uuid = player.getUniqueId();
+            boolean onGround = isOnGround(player, config.getFallTest());
+            if (onGround) {
+                // 落地后重置二段跳状态
+                if (hasDoubleJumped.getOrDefault(uuid, false)) {
+                    hasDoubleJumped.put(uuid, false);
+                    player.setAllowFlight(true);
+                } else if (!player.getAllowFlight()) {
+                    player.setAllowFlight(true);
+                }
+            }
+        }
+
+        // 旁观者区域限制
+        if (!alivePlayers.contains(player) || lateSpectators.contains(player)) {
             Location loc = player.getLocation();
             Location center = config.getSpectatorRegionCenter();
             if (center != null && loc.getWorld().equals(center.getWorld())) {
-                double radius = config.getSpectatorRegionRadius();
-                if (loc.distanceSquared(center) > radius * radius) {
+                if (loc.distanceSquared(center) > config.getSpectatorRegionRadius() * config.getSpectatorRegionRadius()) {
                     player.teleport(config.getSpectatorSpawn());
                 }
             }
@@ -365,8 +341,76 @@ public class SnowSpleefGame implements Listener, IMinigame {
     }
 
     @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
+    public void onToggleFlight(PlayerToggleFlightEvent event) {
+        Player player = event.getPlayer();
+        if (!players.contains(player)) return;
+        if (state != GameState.PLAYING) return;
+        if (!alivePlayers.contains(player)) return;
+
+        UUID uuid = player.getUniqueId();
+        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
+
+        event.setCancelled(true);
+        player.setAllowFlight(false);
+        player.setFlying(false);
+
+        // 冷却检查
+        long now = System.currentTimeMillis();
+        long last = lastDoubleJumpTimes.getOrDefault(uuid, 0L);
+        long cooldown = config.getDoubleJumpCooldown();
+        if (cooldown > 0 && (now - last) < cooldown) {
+            return;
+        }
+
+        // 根据是否疾跑选择力度
+        double forward = config.getDoubleJumpForwardVelocity();
+        double up = config.getDoubleJumpUpVelocity();
+        if (player.isSprinting()) {
+            forward = config.getDoubleJumpSprintingForwardVelocity();
+            up = config.getDoubleJumpSprintingUpVelocity();
+        }
+
+        Vector direction = player.getLocation().getDirection().multiply(forward).setY(up);
+        player.setVelocity(direction);
+        lastDoubleJumpTimes.put(uuid, now);
+
+        if (!config.isKeepDoubleJump()) {
+            hasDoubleJumped.put(uuid, true);
+        }
+    }
+
+    // 落地检测方法（参考朋友代码）
+    private boolean isOnGround(Player player, int fallTest) {
+        if (player.isOnGround()) return true;
+        Location loc = player.getLocation().clone().subtract(0, 1, 0);
+        for (int i = 0; i < fallTest; i++) {
+            if (loc.getBlock().getType() != Material.AIR) {
+                return true;
+            }
+            loc.subtract(0, 1, 0);
+        }
+        return false;
+    }
+
+    @EventHandler
+    public void onDamageByEntity(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        Player victim = (Player) event.getEntity();
+
+        if (state == GameState.PREPARE) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (state == GameState.PLAYING) {
+            if (event.getDamager() instanceof Player) {
+                Player attacker = (Player) event.getDamager();
+                if (players.contains(attacker) && alivePlayers.contains(attacker) &&
+                        players.contains(victim) && alivePlayers.contains(victim)) {
+                    event.setDamage(0);
+                    return;
+                }
+            }
             event.setCancelled(true);
         }
     }
@@ -398,9 +442,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        if (players.contains(player)) {
-            eliminatePlayer(player);
-        }
+        if (players.contains(player)) eliminatePlayer(player);
         if (lateSpectators.contains(player)) {
             lateSpectators.remove(player);
             BukkitTask task = spectatorWatchTasks.remove(player);
@@ -413,12 +455,12 @@ public class SnowSpleefGame implements Listener, IMinigame {
         eliminatedPlayers.add(player);
         player.setGameMode(GameMode.SPECTATOR);
         player.teleport(config.getSpectatorSpawn());
+        player.setAllowFlight(false); // 确保关闭飞行
 
         for (Player p : players) {
-            p.sendTitle("", ChatColor.AQUA + player.getName() + " 在岩浆里游泳", 0, 40, 10);
+            p.sendTitle("", ChatColor.AQUA + player.getName() + " 被击落了", 0, 40, 10);
         }
 
-        // 检查存活人数是否小于最小需求
         if (alivePlayers.size() < getRequiredPlayers()) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (state == GameState.PLAYING) endGame();

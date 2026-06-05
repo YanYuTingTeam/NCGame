@@ -1,4 +1,4 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.config;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -6,17 +6,18 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExtremeMinefieldConfig {
+public class SnowSpleefConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public ExtremeMinefieldConfig(File file) {
+    public SnowSpleefConfig(File file) {
         this.file = file;
         reload();
     }
@@ -59,36 +60,21 @@ public class ExtremeMinefieldConfig {
         return config.getInt("game.game-time", 300);
     }
 
-    // 胜利区域（两个对角坐标）
-    public boolean isInWinRegion(Location loc) {
-        World world = loc.getWorld();
-        if (world == null) return false;
-        String winWorld = config.getString("game.win-region.world", getWorldName());
-        if (!world.getName().equals(winWorld)) return false;
-
-        double x1 = config.getDouble("game.win-region.pos1.x", 0);
-        double y1 = config.getDouble("game.win-region.pos1.y", 0);
-        double z1 = config.getDouble("game.win-region.pos1.z", 0);
-        double x2 = config.getDouble("game.win-region.pos2.x", 0);
-        double y2 = config.getDouble("game.win-region.pos2.y", 0);
-        double z2 = config.getDouble("game.win-region.pos2.z", 0);
-
-        double minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
-        double minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
-        double minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
-
-        return loc.getX() >= minX && loc.getX() <= maxX
-                && loc.getY() >= minY && loc.getY() <= maxY
-                && loc.getZ() >= minZ && loc.getZ() <= maxZ;
+    public double getDeathY() {
+        return config.getDouble("game.death-y", 0.0);
     }
 
-    // 陷阱设置
-    public double getLaunchPower() {
-        return config.getDouble("game.trap.launch-power", 2.0);
+    public Enchantment getShovelEnchantmentType() {
+        String type = config.getString("game.shovel-enchantment.type", "DIG_SPEED");
+        return Enchantment.getByName(type);
     }
 
-    public boolean isTeleportBack() {
-        return config.getBoolean("game.trap.teleport-back", true);
+    public int getShovelEnchantmentLevel() {
+        return config.getInt("game.shovel-enchantment.level", 5);
+    }
+
+    public List<String> getBreakableBlocks() {
+        return config.getStringList("game.breakable-blocks");
     }
 
     // ===== 旁观者 =====
@@ -111,34 +97,23 @@ public class ExtremeMinefieldConfig {
         double z = config.getDouble("game.spectator.region.center.z", 0.0);
         return new Location(world, x, y, z);
     }
-    // 在类中添加以下方法
-    public boolean isEffectEnabled() {
-        return config.getBoolean("game.trap.effect.enabled", false);
-    }
 
-    public String getParticleName() {
-        return config.getString("game.trap.effect.particle", "FLAME");
-    }
-
-    public int getParticleCount() {
-        return config.getInt("game.trap.effect.count", 30);
-    }
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
 
-    // ===== 音效 =====
+    // ===== 音效开关 =====
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
 
-    // ===== 计分板 =====
+    // ===== 计分板配置 =====
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6极限雷区"));
+                config.getString("game.scoreboard.title", "&6掘一死战"));
     }
-    public int getTeleportDelay() {
-        return config.getInt("game.trap.teleport-delay", 20); // 默认20 tick = 1秒
+    public double getWinY() {
+        return config.getDouble("game.win-y", 100.0);
     }
 
     public List<String> getScoreboardLines() {

@@ -1,4 +1,4 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.config;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,12 +11,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SpeedrunConfig {
+public class KnockbackBattleConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public SpeedrunConfig(File file) {
+    public KnockbackBattleConfig(File file) {
         this.file = file;
         reload();
     }
@@ -25,7 +25,6 @@ public class SpeedrunConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
     }
 
-    // 基础设置
     public String getWorldName() {
         return config.getString("game.world", "minigame_world");
     }
@@ -59,29 +58,38 @@ public class SpeedrunConfig {
         return config.getInt("game.game-time", 300);
     }
 
-    // 胜利区域判断
-    public boolean isInWinRegion(Location loc) {
-        World world = loc.getWorld();
-        if (world == null) return false;
-        String winWorld = config.getString("game.win-region.world", getWorldName());
-        if (!world.getName().equals(winWorld)) return false;
-
-        double x1 = config.getDouble("game.win-region.pos1.x", 0);
-        double y1 = config.getDouble("game.win-region.pos1.y", 0);
-        double z1 = config.getDouble("game.win-region.pos1.z", 0);
-        double x2 = config.getDouble("game.win-region.pos2.x", 0);
-        double y2 = config.getDouble("game.win-region.pos2.y", 0);
-        double z2 = config.getDouble("game.win-region.pos2.z", 0);
-
-        double minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
-        double minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
-        double minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
-
-        return loc.getX() >= minX && loc.getX() <= maxX
-                && loc.getY() >= minY && loc.getY() <= maxY
-                && loc.getZ() >= minZ && loc.getZ() <= maxZ;
+    public double getDeathY() {
+        return config.getDouble("game.death-y", 0.0);
     }
 
+    public boolean isDoubleJumpEnabled() {
+        return config.getBoolean("game.double-jump.enabled", true);
+    }
+
+    public double getDoubleJumpPower() {
+        return config.getDouble("game.double-jump.power", 1.5);
+    }
+    public double getDoubleJumpUpVelocity() {
+        return config.getDouble("game.double-jump.up-velocity", 1.5);
+    }
+    public double getDoubleJumpForwardVelocity() {
+        return config.getDouble("game.double-jump.forward-velocity", 0.8);
+    }
+    public double getDoubleJumpSprintingUpVelocity() {
+        return config.getDouble("game.double-jump.sprinting-up-velocity", 1.8);
+    }
+    public double getDoubleJumpSprintingForwardVelocity() {
+        return config.getDouble("game.double-jump.sprinting-forward-velocity", 1.2);
+    }
+    public long getDoubleJumpCooldown() {
+        return config.getLong("game.double-jump.cooldown", 1000L);
+    }
+    public boolean isKeepDoubleJump() {
+        return config.getBoolean("game.double-jump.keep-doublejump", false);
+    }
+    public int getFallTest() {
+        return config.getInt("game.double-jump.fall-test", 3);
+    }
     // 旁观者
     public Location getSpectatorSpawn() {
         World world = Bukkit.getWorld(config.getString("game.spectator.spawn.world", getWorldName()));
@@ -107,19 +115,15 @@ public class SpeedrunConfig {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
 
-    // 音效
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
 
-    // 计分板
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6急速酷跑"));
+                config.getString("game.scoreboard.title", "&6击退战"));
     }
-    public double getDeathY() {
-        return config.getDouble("game.death-y", 0.0);
-    }
+
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
         List<String> colored = new ArrayList<>();

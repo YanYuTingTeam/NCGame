@@ -1,6 +1,9 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.config;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -8,12 +11,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BombSheepConfig {
+public class SpeedrunConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public BombSheepConfig(File file) {
+    public SpeedrunConfig(File file) {
         this.file = file;
         reload();
     }
@@ -56,40 +59,27 @@ public class BombSheepConfig {
         return config.getInt("game.game-time", 300);
     }
 
-    // 羊生成区域
-    public Location getSheepRegionPos1() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.sheep-region.pos1.x", 0);
-        double y = config.getDouble("game.sheep-region.pos1.y", 64);
-        double z = config.getDouble("game.sheep-region.pos1.z", 0);
-        return new Location(world, x, y, z);
-    }
+    // 胜利区域判断
+    public boolean isInWinRegion(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return false;
+        String winWorld = config.getString("game.win-region.world", getWorldName());
+        if (!world.getName().equals(winWorld)) return false;
 
-    public Location getSheepRegionPos2() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.sheep-region.pos2.x", 0);
-        double y = config.getDouble("game.sheep-region.pos2.y", 64);
-        double z = config.getDouble("game.sheep-region.pos2.z", 0);
-        return new Location(world, x, y, z);
-    }
+        double x1 = config.getDouble("game.win-region.pos1.x", 0);
+        double y1 = config.getDouble("game.win-region.pos1.y", 0);
+        double z1 = config.getDouble("game.win-region.pos1.z", 0);
+        double x2 = config.getDouble("game.win-region.pos2.x", 0);
+        double y2 = config.getDouble("game.win-region.pos2.y", 0);
+        double z2 = config.getDouble("game.win-region.pos2.z", 0);
 
-    public int getMaxSheep() {
-        return config.getInt("game.max-sheep", 16);
-    }
+        double minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+        double minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+        double minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
 
-    public int getSpawnInterval() {
-        return config.getInt("game.spawn-interval", 40);
-    }
-
-    // 爆炸设置
-    public double getExplodeChance() {
-        return config.getDouble("game.explode-chance", 0.3);
-    }
-
-    public double getExplodeDamage() {
-        return config.getDouble("game.explode-damage", 4.0);
+        return loc.getX() >= minX && loc.getX() <= maxX
+                && loc.getY() >= minY && loc.getY() <= maxY
+                && loc.getZ() >= minZ && loc.getZ() <= maxZ;
     }
 
     // 旁观者
@@ -125,14 +115,10 @@ public class BombSheepConfig {
     // 计分板
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6炸弹羊"));
+                config.getString("game.scoreboard.title", "&6急速酷跑"));
     }
     public double getDeathY() {
         return config.getDouble("game.death-y", 0.0);
-    }
-
-    public double getExplosionPower() {
-        return config.getDouble("game.explosion-power", 2.0);
     }
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");

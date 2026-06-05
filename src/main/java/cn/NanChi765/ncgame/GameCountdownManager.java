@@ -1,5 +1,6 @@
 package cn.nanchi765.ncgame;
 
+import cn.nanchi765.ncgame.config.LobbyConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;

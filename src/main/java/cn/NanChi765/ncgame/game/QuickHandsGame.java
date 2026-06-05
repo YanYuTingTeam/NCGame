@@ -1,37 +1,39 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.game;
 
+import cn.nanchi765.ncgame.IMinigame;
+import cn.nanchi765.ncgame.NCGame;
+import cn.nanchi765.ncgame.config.QuickHandsConfig;
 import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.*;
-import org.bukkit.util.Vector;
 
 import java.util.*;
 
-public class ExtremeMinefieldGame implements Listener, IMinigame {
+public class QuickHandsGame implements Listener, IMinigame {
 
     private final JavaPlugin plugin;
-    private final ExtremeMinefieldConfig config;
+    private final QuickHandsConfig config;
     private final List<Player> players;
-    private final List<Player> alivePlayers;
+    private final List<Player> alivePlayers;               // 新增存活列表
     private final List<Player> finishedPlayers;
-    private final List<Player> eliminatedPlayers;
+    private final List<Player> eliminatedPlayers;           // 新增淘汰列表
     private final List<Player> lateSpectators = new ArrayList<>();
     private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
-    private final Map<Player, Location> spawnPoints = new HashMap<>();
     private GameState state;
     private int prepareTimer;
     private int gameTimer;
@@ -41,7 +43,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
         WAITING, PREPARE, PLAYING, ENDED
     }
 
-    public ExtremeMinefieldGame(JavaPlugin plugin, ExtremeMinefieldConfig config, List<Player> players) {
+    public QuickHandsGame(JavaPlugin plugin, QuickHandsConfig config, List<Player> players) {
         this.plugin = plugin;
         this.config = config;
         this.players = new ArrayList<>(players);
@@ -64,7 +66,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
             Player p = shuffledPlayers.get(i);
             Location loc = (i < spawns.size()) ? spawns.get(i) : spawns.get(0);
             p.teleport(loc);
-            spawnPoints.put(p, loc.clone());
             p.setGameMode(GameMode.ADVENTURE);
             p.getInventory().clear();
             p.setFoodLevel(20);
@@ -81,14 +82,40 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
         state = GameState.PREPARE;
         prepareTimer = config.getPrepareTime();
 
+        // 发放三件工具
+        ItemStack axe = createTool(
+                Material.matchMaterial(config.getAxeMaterial()),
+                config.getAxeEnchantment(),
+                config.getAxeLevel(),
+                ChatColor.GREEN + "铁斧"
+        );
+        ItemStack pick = createTool(
+                Material.matchMaterial(config.getPickaxeMaterial()),
+                config.getPickaxeEnchantment(),
+                config.getPickaxeLevel(),
+                ChatColor.GREEN + "铁镐"
+        );
+        ItemStack shovel = createTool(
+                Material.matchMaterial(config.getShovelMaterial()),
+                config.getShovelEnchantment(),
+                config.getShovelLevel(),
+                ChatColor.GREEN + "铁铲"
+        );
+
+        for (Player p : players) {
+            p.getInventory().setItem(0, axe);
+            p.getInventory().setItem(1, pick);
+            p.getInventory().setItem(2, shovel);
+        }
+
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (state != GameState.PREPARE) { cancel(); return; }
                 if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
-                if (prepareTimer <= 10) {
-                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "避开压力板陷阱，第一个到达终点！";
+                if (prepareTimer <= 5) { // 最后5秒中央倒计时
+                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer);
+                    String subtitle = ChatColor.DARK_GREEN + "挖到终点，利用工具加快挖掘速度！";
                     for (Player p : players) {
                         p.sendTitle(title, subtitle, 0, 25, 5);
                         if (config.isCountdownSoundEnabled())
@@ -101,9 +128,20 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
+    private ItemStack createTool(Material material, Enchantment ench, int level, String name) {
+        if (material == null) material = Material.IRON_SPADE;
+        ItemStack tool = new ItemStack(material, 1);
+        ItemMeta meta = tool.getItemMeta();
+        meta.setDisplayName(name);
+        tool.setItemMeta(meta);
+        if (ench != null) tool.addUnsafeEnchantment(ench, level);
+        else tool.addUnsafeEnchantment(Enchantment.DIG_SPEED, 5);
+        return tool;
+    }
+
     private void startPlayingPhase() {
         state = GameState.PLAYING;
-        for (Player p : players) p.setGameMode(GameMode.ADVENTURE);
+        for (Player p : players) p.setGameMode(GameMode.SURVIVAL);
         gameTimer = config.getGameTime();
         gameTask = new BukkitRunnable() {
             @Override
@@ -141,7 +179,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
         for (Player p : players) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("minefield", "dummy");
+            Objective obj = board.registerNewObjective("quickhands", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -158,7 +196,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
         for (Player p : lateSpectators) {
             Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("minefield", "dummy");
+            Objective obj = board.registerNewObjective("quickhands", "dummy");
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.setDisplayName(config.getScoreboardTitle());
             int score = lines.size();
@@ -223,7 +261,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
             }
         }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 极限雷区 排行榜 =====");
+        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 眼疾手快 排行榜 =====");
         if (finishedPlayers.isEmpty()) {
             Bukkit.broadcastMessage(ChatColor.RED + "无人完成本轮游戏！");
         } else {
@@ -261,9 +299,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
         for (Player p : players) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
         for (Player p : lateSpectators) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
-        if (plugin instanceof NCGame) {
-            ((NCGame) plugin).onMinigameEnd();
-        }
+        if (plugin instanceof NCGame) ((NCGame) plugin).onMinigameEnd();
     }
 
     @Override
@@ -285,9 +321,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                         spectatorWatchTasks.remove(player);
                         return;
                     }
-                    if (player.getGameMode() != GameMode.SPECTATOR) {
-                        player.setGameMode(GameMode.SPECTATOR);
-                    }
+                    if (player.getGameMode() != GameMode.SPECTATOR) player.setGameMode(GameMode.SPECTATOR);
                 }
             }.runTaskTimer(plugin, 0L, 20L);
             spectatorWatchTasks.put(player, task);
@@ -295,45 +329,38 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
     }
 
     // ========== 事件处理 ==========
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (state != GameState.PLAYING) {
+            event.setCancelled(true);
+            return;
+        }
+        Player player = event.getPlayer();
+        if (!players.contains(player) || !alivePlayers.contains(player)) return;
+        Material type = event.getBlock().getType();
+        if (!config.getBreakableBlocks().contains(type.name())) {
+            event.setCancelled(true);
+        } else {
+            event.setDropItems(false);
+        }
+    }
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (!players.contains(player) && !lateSpectators.contains(player)) return;
 
-        // 准备阶段锁定
-        if (state == GameState.PREPARE && players.contains(player)) {
-            Location spawn = spawnPoints.get(player);
-            if (spawn != null && player.getLocation().distanceSquared(spawn) > 0.01) {
-                player.teleport(spawn);
-            }
-            return;
-        }
-
-        // 旁观者模式保护
         if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
             player.setGameMode(GameMode.SPECTATOR);
         }
 
-        // 意外掉落传送回出生点
+        // 参赛者移动：检查是否到达胜利高度
         if (players.contains(player) && state == GameState.PLAYING && alivePlayers.contains(player)) {
-            if (player.getLocation().getY() < 0.0) {
-                Location spawn = spawnPoints.get(player);
-                if (spawn != null) {
-                    player.teleport(spawn);
-                    player.sendMessage(ChatColor.RED + "你掉下去了，已传送回出生点！");
-                }
-                return;
-            }
-        }
-
-        // 胜利区域检测
-        if (players.contains(player) && state == GameState.PLAYING && alivePlayers.contains(player)) {
-            if (!finishedPlayers.contains(player) && config.isInWinRegion(player.getLocation())) {
+            if (!finishedPlayers.contains(player) && player.getLocation().getY() <= config.getWinY()) {
                 finishedPlayers.add(player);
                 player.setGameMode(GameMode.SPECTATOR);
                 player.teleport(config.getSpectatorSpawn());
-                String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedPlayers.size() + " 名）";
+                String msg = ChatColor.AQUA + player.getName() + " 挖到了宝藏";
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.sendTitle("", msg, 10, 70, 10);
                 }
@@ -352,45 +379,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 double radius = config.getSpectatorRegionRadius();
                 if (loc.distanceSquared(center) > radius * radius) {
                     player.teleport(config.getSpectatorSpawn());
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPressurePlate(PlayerInteractEvent event) {
-        if (state != GameState.PLAYING) return;
-        if (event.getAction() != Action.PHYSICAL) return;
-        Player player = event.getPlayer();
-        if (!players.contains(player) || !alivePlayers.contains(player)) return;
-        if (finishedPlayers.contains(player)) return;
-
-        Material type = event.getClickedBlock().getType();
-        if (type == Material.STONE_PLATE || type == Material.WOOD_PLATE ||
-                type == Material.GOLD_PLATE || type == Material.IRON_PLATE) {
-            event.setCancelled(true);
-            Vector vel = new Vector(0, config.getLaunchPower(), 0);
-            player.setVelocity(vel);
-            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
-
-            // 播放特效
-            if (config.isEffectEnabled()) {
-                String particleName = config.getParticleName();
-                Particle particle = Particle.valueOf(particleName.toUpperCase());
-                player.getWorld().spawnParticle(particle, player.getLocation().add(0, 0.5, 0), config.getParticleCount(), 0.3, 0.3, 0.3, 0);
-            }
-
-            // 延迟传送回出生点
-            if (config.isTeleportBack()) {
-                int delay = config.getTeleportDelay();
-                Location spawn = spawnPoints.get(player);
-                if (spawn != null) {
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            player.teleport(spawn);
-                        }
-                    }.runTaskLater(plugin, delay);
                 }
             }
         }

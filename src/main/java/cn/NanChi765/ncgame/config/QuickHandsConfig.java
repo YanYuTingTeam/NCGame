@@ -1,4 +1,4 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.config;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -6,17 +6,18 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SnakeConfig {
+public class QuickHandsConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public SnakeConfig(File file) {
+    public QuickHandsConfig(File file) {
         this.file = file;
         reload();
     }
@@ -25,6 +26,7 @@ public class SnakeConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
     }
 
+    // ===== 基础设置 =====
     public String getWorldName() {
         return config.getString("game.world", "minigame_world");
     }
@@ -33,15 +35,21 @@ public class SnakeConfig {
         return Bukkit.getWorld(getWorldName());
     }
 
-    public Location getSpawnLocation() {
+    public List<Location> getSpawnLocations() {
+        List<Location> locs = new ArrayList<>();
         World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.spawn.x", 0.5);
-        double y = config.getDouble("game.spawn.y", 64.0);
-        double z = config.getDouble("game.spawn.z", 0.5);
-        float yaw = (float) config.getDouble("game.spawn.yaw", 0.0);
-        float pitch = (float) config.getDouble("game.spawn.pitch", 0.0);
-        return new Location(world, x, y, z, yaw, pitch);
+        if (world == null) return locs;
+        if (config.isConfigurationSection("game.spawns")) {
+            for (String key : config.getConfigurationSection("game.spawns").getKeys(false)) {
+                double x = config.getDouble("game.spawns." + key + ".x", 0.0);
+                double y = config.getDouble("game.spawns." + key + ".y", 64.0);
+                double z = config.getDouble("game.spawns." + key + ".z", 0.0);
+                float yaw = (float) config.getDouble("game.spawns." + key + ".yaw", 0.0);
+                float pitch = (float) config.getDouble("game.spawns." + key + ".pitch", 0.0);
+                locs.add(new Location(world, x, y, z, yaw, pitch));
+            }
+        }
+        return locs;
     }
 
     public int getPrepareTime() {
@@ -56,15 +64,45 @@ public class SnakeConfig {
         return config.getDouble("game.death-y", 0.0);
     }
 
-    public int getVanishInterval() {
-        return config.getInt("game.vanish.interval", 10);
+    public List<String> getBreakableBlocks() {
+        return config.getStringList("game.breakable-blocks");
     }
 
-    public List<String> getVanishBlocks() {
-        return config.getStringList("game.vanish.blocks");
+    // ===== 工具 =====
+    public String getAxeMaterial() {
+        return config.getString("game.tools.axe.material", "IRON_AXE");
+    }
+    public Enchantment getAxeEnchantment() {
+        String name = config.getString("game.tools.axe.enchantment", "DIG_SPEED");
+        return Enchantment.getByName(name);
+    }
+    public int getAxeLevel() {
+        return config.getInt("game.tools.axe.level", 5);
     }
 
-    // 旁观者
+    public String getPickaxeMaterial() {
+        return config.getString("game.tools.pickaxe.material", "IRON_PICKAXE");
+    }
+    public Enchantment getPickaxeEnchantment() {
+        String name = config.getString("game.tools.pickaxe.enchantment", "DIG_SPEED");
+        return Enchantment.getByName(name);
+    }
+    public int getPickaxeLevel() {
+        return config.getInt("game.tools.pickaxe.level", 5);
+    }
+
+    public String getShovelMaterial() {
+        return config.getString("game.tools.shovel.material", "IRON_SPADE");
+    }
+    public Enchantment getShovelEnchantment() {
+        String name = config.getString("game.tools.shovel.enchantment", "DIG_SPEED");
+        return Enchantment.getByName(name);
+    }
+    public int getShovelLevel() {
+        return config.getInt("game.tools.shovel.level", 5);
+    }
+
+    // ===== 旁观者 =====
     public Location getSpectatorSpawn() {
         World world = Bukkit.getWorld(config.getString("game.spectator.spawn.world", getWorldName()));
         if (world == null) world = getWorld();
@@ -84,52 +122,24 @@ public class SnakeConfig {
         double z = config.getDouble("game.spectator.region.center.z", 0.0);
         return new Location(world, x, y, z);
     }
-// 在 SnakeConfig 类中添加以下方法
 
-    public boolean isBarrierEnabled() {
-        return config.getBoolean("game.barrier.enabled", false);
-    }
-
-    public int getBarrierY() {
-        return config.getInt("game.barrier.y", 62);
-    }
-
-    public Location getBarrierPos1() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.barrier.pos1.x", 0.0);
-        double z = config.getDouble("game.barrier.pos1.z", 0.0);
-        return new Location(world, x, getBarrierY(), z);
-    }
-
-    public double getTimer() {
-        return Math.min(5.0, Math.max(0.5, config.getDouble("game.timer", 2.0)));
-    }
-
-    public double getJumpPower() {
-        return config.getDouble("game.jump-power", 0.42);
-    }
-
-    public Location getBarrierPos2() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.barrier.pos2.x", 0.0);
-        double z = config.getDouble("game.barrier.pos2.z", 0.0);
-        return new Location(world, x, getBarrierY(), z);
-    }
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
 
+    // ===== 音效 =====
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
 
+    // ===== 计分板 =====
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6贪吃蛇"));
+                config.getString("game.scoreboard.title", "&6眼疾手快"));
     }
-
+    public double getWinY() {
+        return config.getDouble("game.win-y", 100.0);
+    }
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
         List<String> colored = new ArrayList<>();

@@ -1,5 +1,7 @@
 package cn.nanchi765.ncgame;
 
+import cn.nanchi765.ncgame.config.*;
+import cn.nanchi765.ncgame.game.*;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bukkit.*;

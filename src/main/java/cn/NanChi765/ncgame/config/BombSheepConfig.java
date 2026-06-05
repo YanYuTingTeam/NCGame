@@ -1,9 +1,6 @@
-package cn.nanchi765.ncgame;
+package cn.nanchi765.ncgame.config;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -11,12 +8,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FaithBlockConfig {
+public class BombSheepConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public FaithBlockConfig(File file) {
+    public BombSheepConfig(File file) {
         this.file = file;
         reload();
     }
@@ -25,6 +22,7 @@ public class FaithBlockConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
     }
 
+    // 基础设置
     public String getWorldName() {
         return config.getString("game.world", "minigame_world");
     }
@@ -33,33 +31,21 @@ public class FaithBlockConfig {
         return Bukkit.getWorld(getWorldName());
     }
 
-    public Location getSpawnLocation() {
+    public List<Location> getSpawnLocations() {
+        List<Location> locs = new ArrayList<>();
         World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.spawn.x", 0.5);
-        double y = config.getDouble("game.spawn.y", 64.0);
-        double z = config.getDouble("game.spawn.z", 0.5);
-        float yaw = (float) config.getDouble("game.spawn.yaw", 0.0);
-        float pitch = (float) config.getDouble("game.spawn.pitch", 0.0);
-        return new Location(world, x, y, z, yaw, pitch);
-    }
-
-    public Location getRegionPos1() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.region.pos1.x", 0.0);
-        double y = config.getDouble("game.region.pos1.y", 64.0);
-        double z = config.getDouble("game.region.pos1.z", 0.0);
-        return new Location(world, x, y, z);
-    }
-
-    public Location getRegionPos2() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.region.pos2.x", 0.0);
-        double y = config.getDouble("game.region.pos2.y", 64.0);
-        double z = config.getDouble("game.region.pos2.z", 0.0);
-        return new Location(world, x, y, z);
+        if (world == null) return locs;
+        if (config.isConfigurationSection("game.spawns")) {
+            for (String key : config.getConfigurationSection("game.spawns").getKeys(false)) {
+                double x = config.getDouble("game.spawns." + key + ".x", 0.0);
+                double y = config.getDouble("game.spawns." + key + ".y", 64.0);
+                double z = config.getDouble("game.spawns." + key + ".z", 0.0);
+                float yaw = (float) config.getDouble("game.spawns." + key + ".yaw", 0.0);
+                float pitch = (float) config.getDouble("game.spawns." + key + ".pitch", 0.0);
+                locs.add(new Location(world, x, y, z, yaw, pitch));
+            }
+        }
+        return locs;
     }
 
     public int getPrepareTime() {
@@ -70,16 +56,40 @@ public class FaithBlockConfig {
         return config.getInt("game.game-time", 300);
     }
 
-    public double getDeathY() {
-        return config.getDouble("game.death-y", 0.0);
+    // 羊生成区域
+    public Location getSheepRegionPos1() {
+        World world = getWorld();
+        if (world == null) return null;
+        double x = config.getDouble("game.sheep-region.pos1.x", 0);
+        double y = config.getDouble("game.sheep-region.pos1.y", 64);
+        double z = config.getDouble("game.sheep-region.pos1.z", 0);
+        return new Location(world, x, y, z);
     }
 
-    public int getPhaseDurationMin() {
-        return config.getInt("game.phase-duration-min", 5);
+    public Location getSheepRegionPos2() {
+        World world = getWorld();
+        if (world == null) return null;
+        double x = config.getDouble("game.sheep-region.pos2.x", 0);
+        double y = config.getDouble("game.sheep-region.pos2.y", 64);
+        double z = config.getDouble("game.sheep-region.pos2.z", 0);
+        return new Location(world, x, y, z);
     }
 
-    public int getPhaseDurationMax() {
-        return config.getInt("game.phase-duration-max", 24);
+    public int getMaxSheep() {
+        return config.getInt("game.max-sheep", 16);
+    }
+
+    public int getSpawnInterval() {
+        return config.getInt("game.spawn-interval", 40);
+    }
+
+    // 爆炸设置
+    public double getExplodeChance() {
+        return config.getDouble("game.explode-chance", 0.3);
+    }
+
+    public double getExplodeDamage() {
+        return config.getDouble("game.explode-damage", 4.0);
     }
 
     // 旁观者
@@ -107,42 +117,22 @@ public class FaithBlockConfig {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
 
+    // 音效
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
-    public int getChangeInterval() {
-        return config.getInt("game.change-interval", 4);
-    }
 
-    public int getProbWhiteToYellow() {
-        return config.getInt("game.probabilities.white-to-yellow", 70);
-    }
-
-    public int getProbYellowToOrange() {
-        return config.getInt("game.probabilities.yellow-to-orange", 50);
-    }
-
-    public int getProbOrangeToRed() {
-        return config.getInt("game.probabilities.orange-to-red", 30);
-    }
-
-    public int getProbRedToAir() {
-        return config.getInt("game.probabilities.red-to-air", 10);
-    }
-    // 在 FaithBlockConfig 类中添加以下两个方法
-    public int getChangeAmountMin() {
-        return config.getInt("game.change-amount-min", 5);
-    }
-    public int getChangeAmountMax() {
-        return config.getInt("game.change-amount-max", 10);
-    }
-
+    // 计分板
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6信仰方块"));
+                config.getString("game.scoreboard.title", "&6炸弹羊"));
     }
-    public double getPhaseChangePercent() {
-        return config.getDouble("game.phase-change-percent", 0.3);
+    public double getDeathY() {
+        return config.getDouble("game.death-y", 0.0);
+    }
+
+    public double getExplosionPower() {
+        return config.getDouble("game.explosion-power", 2.0);
     }
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
