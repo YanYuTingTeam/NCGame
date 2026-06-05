@@ -4,10 +4,7 @@ import cn.nanchi765.ncgame.config.EnableGameConfig;
 import cn.nanchi765.ncgame.config.LobbyConfig;
 import cn.nanchi765.ncgame.config.game.*;
 import cn.nanchi765.ncgame.config.game.*;
-import cn.nanchi765.ncgame.listener.FoodLevelChangeListener;
-import cn.nanchi765.ncgame.listener.InGameQuitListener;
-import cn.nanchi765.ncgame.listener.LobbyListener;
-import cn.nanchi765.ncgame.listener.SpecListener;
+import cn.nanchi765.ncgame.listener.*;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.PlayerDataManager;
 import cn.nanchi765.ncgame.manager.ScoreBoardManager;
@@ -67,6 +64,7 @@ public class NCGame extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new InGameQuitListener(), this);
         getServer().getPluginManager().registerEvents(new LobbyListener(), this);
         getServer().getPluginManager().registerEvents(new SpecListener(), this);
+        getServer().getPluginManager().registerEvents(new MOTDListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
         gameManager = new GameManager(this);

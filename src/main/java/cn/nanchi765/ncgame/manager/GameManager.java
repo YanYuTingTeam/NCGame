@@ -56,6 +56,7 @@ public class GameManager {
     public GameManager(NCGame plugin) {
         this.plugin = plugin;
         dataFolder = plugin.getDataFolder();
+        currentStatus = Status.WAITING;
     }
 
     public void addLatePlayer(Player player) {
