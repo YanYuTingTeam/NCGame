@@ -43,13 +43,12 @@ public class LobbyListener implements Listener {
             gameManager.addLatePlayer(player);
             return;
         }
+        gameManager.addPlayer(player);
         // 传送大厅
         teleportToLobby(player);
 
-        gameManager.addPlayer(player);
-
         // 达到人数 开始倒计时
-        if (gameManager.getGameStartingTask() == null && gameManager.getPlayers().size() > lobbyConfig.getMinPlayers()) {
+        if (gameManager.getGameStartingTask() == null && gameManager.getPlayers().size() >= lobbyConfig.getMinPlayers()) {
             gameManager.setGameStartingTask(new GameStartingTask(gameManager));
         }
     }
@@ -70,15 +69,21 @@ public class LobbyListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (gameManager.getCurrentStatus() != Status.WAITING) return;
         Player player = event.getPlayer();
-        if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR ||
-                event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
-            ItemStack item = event.getItem();
+        if (!event.getAction().toString().contains("RIGHT")) return;
+        ItemStack item = event.getItem();
             if (item != null && item == lobbyConfig.getLobbyItem()) {
                 event.setCancelled(true);
                 LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
             }
         }
-    }
+//        if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR ||
+//                event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+//            ItemStack item = event.getItem();
+//            if (item != null && item == lobbyConfig.getLobbyItem()) {
+//                event.setCancelled(true);
+//                LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
+//            }
+//        }
 
     @EventHandler
     public void onPlayerInventoryClick(InventoryClickEvent event) {
