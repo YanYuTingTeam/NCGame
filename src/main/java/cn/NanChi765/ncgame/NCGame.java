@@ -19,11 +19,11 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.inventory.meta.BookMeta;
 
 import java.io.File;
 import java.util.*;
@@ -31,15 +31,15 @@ import java.util.stream.Collectors;
 
 public class NCGame extends JavaPlugin implements Listener, CommandExecutor {
 
+    private final Map<UUID, Integer> playerScores = new HashMap<>();
+    private final List<Player> lateJoinQueue = new ArrayList<>();
     private LobbyConfig lobbyConfig;
     private EnableGameConfig enableGameConfig;
     private GameCountdownManager countdownManager;
     private LobbyScoreboardManager scoreboardManager;
     private IMinigame currentGame;
     private WorldResetManager worldResetManager;
-    private List<String> pendingGames = new ArrayList<>();
-    private final Map<UUID, Integer> playerScores = new HashMap<>();
-    private final List<Player> lateJoinQueue = new ArrayList<>();
+    private final List<String> pendingGames = new ArrayList<>();
     private PlayerDataManager playerDataManager;
     private BukkitTask lobbyMonitorTask; // 大厅实时监控
 
@@ -136,8 +136,13 @@ public class NCGame extends JavaPlugin implements Listener, CommandExecutor {
     }
 
     // ========== 公共方法 ==========
-    public LobbyConfig getLobbyConfig() { return lobbyConfig; }
-    public EnableGameConfig getEnableGameConfig() { return enableGameConfig; }
+    public LobbyConfig getLobbyConfig() {
+        return lobbyConfig;
+    }
+
+    public EnableGameConfig getEnableGameConfig() {
+        return enableGameConfig;
+    }
 
     public void stopLobbyScoreboard() {
         if (scoreboardManager != null) scoreboardManager.stopUpdating();
@@ -419,6 +424,7 @@ public class NCGame extends JavaPlugin implements Listener, CommandExecutor {
         // 添加指南书到倒数第二个格子（索引7）
         player.getInventory().setItem(7, createGuideBook());
     }
+
     private ItemStack createGuideBook() {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
@@ -460,17 +466,15 @@ public class NCGame extends JavaPlugin implements Listener, CommandExecutor {
 
         // 第四页
         String page4 = ChatColor.BOLD + "      ● 更新日志\n" + ChatColor.RESET +
-                ChatColor.BOLD +"❒ 版本：1.4.0\n" +
-                ChatColor.BOLD +"❑ 日期：2026/6/6\n\n" + ChatColor.RESET +
+                ChatColor.BOLD + "❒ 版本：1.4.0\n" +
+                ChatColor.BOLD + "❑ 日期：2026/6/6\n\n" + ChatColor.RESET +
                 " 1一正式上线\n" +
                 " ■包含多达11款小型游戏\n" +
                 " ■节奏快捷、玩法类别多";
 
         // 第五页
         String page5 = ChatColor.BOLD + "      ● 关于我们\n" + ChatColor.RESET +
-                "" +
-                "《烟雨庭》是由一群热爱我的世界的小伙伴们仿造的国风小游戏服务器《花雨庭》；上线伊始，我们与其他服达成合作,相信在大家的支持下，我们会越来越好!《烟雨庭》只为你的快乐而生。\n" +
-                "" + ChatColor.BOLD +
+                "《烟雨庭》是由一群热爱我的世界的小伙伴们仿造的国风小游戏服务器《花雨庭》；上线伊始，我们与其他服达成合作,相信在大家的支持下，我们会越来越好!《烟雨庭》只为你的快乐而生。\n" + ChatColor.BOLD +
                 "➡官网：www.mcyyt.cn\n" +
                 "➡客服：即将上线\n" +
                 "➡QQ群：892702519";
@@ -479,6 +483,7 @@ public class NCGame extends JavaPlugin implements Listener, CommandExecutor {
         book.setItemMeta(meta);
         return book;
     }
+
     private void sendToBungeeLobby(Player player) {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Connect");

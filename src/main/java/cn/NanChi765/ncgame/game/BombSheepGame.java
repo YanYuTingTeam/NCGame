@@ -5,7 +5,8 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.BombSheepConfig;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Sheep;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -23,7 +24,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 
 import java.util.*;
 
@@ -43,11 +47,7 @@ public class BombSheepGame implements Listener, IMinigame {
     private int gameTimer;
     private BukkitTask gameTask;
     private BukkitTask sheepSpawnTask;
-    private Random random = new Random();
-
-    private enum GameState {
-        WAITING, PREPARE, PLAYING, ENDED
-    }
+    private final Random random = new Random();
 
     public BombSheepGame(JavaPlugin plugin, BombSheepConfig config, List<Player> players) {
         this.plugin = plugin;
@@ -101,8 +101,15 @@ public class BombSheepGame implements Listener, IMinigame {
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PREPARE) { cancel(); return; }
-                if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
+                if (state != GameState.PREPARE) {
+                    cancel();
+                    return;
+                }
+                if (prepareTimer <= 0) {
+                    startPlayingPhase();
+                    cancel();
+                    return;
+                }
                 if (prepareTimer <= 10) {
                     String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
                     String subtitle = ChatColor.DARK_GREEN + "剪羊毛，但要小心炸弹羊！";
@@ -147,7 +154,10 @@ public class BombSheepGame implements Listener, IMinigame {
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PLAYING) { cancel(); return; }
+                if (state != GameState.PLAYING) {
+                    cancel();
+                    return;
+                }
                 if (gameTimer > 0) gameTimer--;
                 if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
                     endGame();
@@ -175,7 +185,7 @@ public class BombSheepGame implements Listener, IMinigame {
             double x = minX + random.nextDouble() * (maxX - minX);
             double z = minZ + random.nextDouble() * (maxZ - minZ);
             for (int y = maxY; y >= minY; y--) {
-                Block block = world.getBlockAt((int)Math.floor(x), y, (int)Math.floor(z));
+                Block block = world.getBlockAt((int) Math.floor(x), y, (int) Math.floor(z));
                 if (block.getType().isSolid()) {
                     return block.getLocation().add(0.5, 1, 0.5);
                 }
@@ -243,7 +253,9 @@ public class BombSheepGame implements Listener, IMinigame {
 
     private void endGame() {
         state = GameState.ENDED;
-        for (Sheep s : activeSheep) { if (s != null && s.isValid()) s.remove(); }
+        for (Sheep s : activeSheep) {
+            if (s != null && s.isValid()) s.remove();
+        }
         activeSheep.clear();
         if (sheepSpawnTask != null) sheepSpawnTask.cancel();
 
@@ -357,8 +369,6 @@ public class BombSheepGame implements Listener, IMinigame {
         }
     }
 
-    // ========== 事件处理 ==========
-
     @EventHandler
     public void onShear(PlayerShearEntityEvent event) {
         if (state != GameState.PLAYING) {
@@ -390,6 +400,8 @@ public class BombSheepGame implements Listener, IMinigame {
             });
         }
     }
+
+    // ========== 事件处理 ==========
 
     @EventHandler
     public void onPickup(PlayerPickupItemEvent event) {
@@ -505,5 +517,9 @@ public class BombSheepGame implements Listener, IMinigame {
                 if (state == GameState.PLAYING) endGame();
             }, 20L);
         }
+    }
+
+    private enum GameState {
+        WAITING, PREPARE, PLAYING, ENDED
     }
 }

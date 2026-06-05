@@ -4,6 +4,8 @@ import org.bukkit.entity.Player;
 
 public interface IMinigame {
     void start();
+
     boolean isRunning();
+
     void addLatePlayer(Player player);
 }

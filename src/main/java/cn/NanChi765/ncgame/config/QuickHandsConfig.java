@@ -72,10 +72,12 @@ public class QuickHandsConfig {
     public String getAxeMaterial() {
         return config.getString("game.tools.axe.material", "IRON_AXE");
     }
+
     public Enchantment getAxeEnchantment() {
         String name = config.getString("game.tools.axe.enchantment", "DIG_SPEED");
         return Enchantment.getByName(name);
     }
+
     public int getAxeLevel() {
         return config.getInt("game.tools.axe.level", 5);
     }
@@ -83,10 +85,12 @@ public class QuickHandsConfig {
     public String getPickaxeMaterial() {
         return config.getString("game.tools.pickaxe.material", "IRON_PICKAXE");
     }
+
     public Enchantment getPickaxeEnchantment() {
         String name = config.getString("game.tools.pickaxe.enchantment", "DIG_SPEED");
         return Enchantment.getByName(name);
     }
+
     public int getPickaxeLevel() {
         return config.getInt("game.tools.pickaxe.level", 5);
     }
@@ -94,10 +98,12 @@ public class QuickHandsConfig {
     public String getShovelMaterial() {
         return config.getString("game.tools.shovel.material", "IRON_SPADE");
     }
+
     public Enchantment getShovelEnchantment() {
         String name = config.getString("game.tools.shovel.enchantment", "DIG_SPEED");
         return Enchantment.getByName(name);
     }
+
     public int getShovelLevel() {
         return config.getInt("game.tools.shovel.level", 5);
     }
@@ -137,9 +143,11 @@ public class QuickHandsConfig {
         return ChatColor.translateAlternateColorCodes('&',
                 config.getString("game.scoreboard.title", "&6眼疾手快"));
     }
+
     public double getWinY() {
         return config.getDouble("game.win-y", 100.0);
     }
+
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
         List<String> colored = new ArrayList<>();

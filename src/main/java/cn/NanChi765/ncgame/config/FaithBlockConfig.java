@@ -110,6 +110,7 @@ public class FaithBlockConfig {
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
+
     public int getChangeInterval() {
         return config.getInt("game.change-interval", 4);
     }
@@ -129,10 +130,12 @@ public class FaithBlockConfig {
     public int getProbRedToAir() {
         return config.getInt("game.probabilities.red-to-air", 10);
     }
+
     // 在 FaithBlockConfig 类中添加以下两个方法
     public int getChangeAmountMin() {
         return config.getInt("game.change-amount-min", 5);
     }
+
     public int getChangeAmountMax() {
         return config.getInt("game.change-amount-max", 10);
     }
@@ -141,9 +144,11 @@ public class FaithBlockConfig {
         return ChatColor.translateAlternateColorCodes('&',
                 config.getString("game.scoreboard.title", "&6信仰方块"));
     }
+
     public double getPhaseChangePercent() {
         return config.getDouble("game.phase-change-percent", 0.3);
     }
+
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
         List<String> colored = new ArrayList<>();

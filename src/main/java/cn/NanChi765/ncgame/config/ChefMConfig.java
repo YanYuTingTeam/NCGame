@@ -115,7 +115,8 @@ public class ChefMConfig {
             String faceStr = config.getString(path + ".facing", "NORTH").toUpperCase();
             try {
                 facing = BlockFace.valueOf(faceStr);
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) {
+            }
 
             // 读取物品列表
             List<ItemStack> items = new ArrayList<>();
@@ -128,7 +129,8 @@ public class ChefMConfig {
                 if (parts.length > 1) {
                     try {
                         data = Short.parseShort(parts[1]);
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
                 items.add(new ItemStack(material, 1, data));
             }
@@ -149,7 +151,10 @@ public class ChefMConfig {
             Set<String> keys = config.getConfigurationSection("game.tasks").getKeys(false);
             List<Integer> sortedKeys = new ArrayList<>();
             for (String key : keys) {
-                try { sortedKeys.add(Integer.parseInt(key)); } catch (NumberFormatException ignored) {}
+                try {
+                    sortedKeys.add(Integer.parseInt(key));
+                } catch (NumberFormatException ignored) {
+                }
             }
             Collections.sort(sortedKeys);
             for (int key : sortedKeys) {
@@ -245,6 +250,29 @@ public class ChefMConfig {
             this.displayName = displayName;
         }
 
+        private static String getChineseName(Material mat) {
+            switch (mat) {
+                case COOKED_RABBIT:
+                    return "烤兔肉";
+                case COOKED_CHICKEN:
+                    return "烤鸡肉";
+                case COOKED_FISH:
+                    return "烤鱼";
+                case BREAD:
+                    return "面包";
+                case CAKE:
+                    return "蛋糕";
+                case GRILLED_PORK:
+                    return "烤猪排";
+                case COOKED_BEEF:
+                    return "烤牛排";
+                case PUMPKIN_PIE:
+                    return "南瓜派";
+                default:
+                    return mat.toString().toLowerCase().replace('_', ' ');
+            }
+        }
+
         /**
          * 获取用于显示的中文名称
          */
@@ -252,20 +280,6 @@ public class ChefMConfig {
             if (displayName != null && !displayName.isEmpty()) return displayName;
             // 默认映射
             return getChineseName(material);
-        }
-
-        private static String getChineseName(Material mat) {
-            switch (mat) {
-                case COOKED_RABBIT: return "烤兔肉";
-                case COOKED_CHICKEN: return "烤鸡肉";
-                case COOKED_FISH: return "烤鱼";
-                case BREAD: return "面包";
-                case CAKE: return "蛋糕";
-                case GRILLED_PORK: return "烤猪排";
-                case COOKED_BEEF: return "烤牛排";
-                case PUMPKIN_PIE: return "南瓜派";
-                default: return mat.toString().toLowerCase().replace('_', ' ');
-            }
         }
     }
 }

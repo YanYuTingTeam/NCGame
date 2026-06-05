@@ -112,6 +112,7 @@ public class SnowSpleefConfig {
         return ChatColor.translateAlternateColorCodes('&',
                 config.getString("game.scoreboard.title", "&6掘一死战"));
     }
+
     public double getWinY() {
         return config.getDouble("game.win-y", 100.0);
     }

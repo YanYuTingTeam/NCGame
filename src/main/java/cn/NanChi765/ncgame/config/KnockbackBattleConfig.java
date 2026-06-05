@@ -69,27 +69,35 @@ public class KnockbackBattleConfig {
     public double getDoubleJumpPower() {
         return config.getDouble("game.double-jump.power", 1.5);
     }
+
     public double getDoubleJumpUpVelocity() {
         return config.getDouble("game.double-jump.up-velocity", 1.5);
     }
+
     public double getDoubleJumpForwardVelocity() {
         return config.getDouble("game.double-jump.forward-velocity", 0.8);
     }
+
     public double getDoubleJumpSprintingUpVelocity() {
         return config.getDouble("game.double-jump.sprinting-up-velocity", 1.8);
     }
+
     public double getDoubleJumpSprintingForwardVelocity() {
         return config.getDouble("game.double-jump.sprinting-forward-velocity", 1.2);
     }
+
     public long getDoubleJumpCooldown() {
         return config.getLong("game.double-jump.cooldown", 1000L);
     }
+
     public boolean isKeepDoubleJump() {
         return config.getBoolean("game.double-jump.keep-doublejump", false);
     }
+
     public int getFallTest() {
         return config.getInt("game.double-jump.fall-test", 3);
     }
+
     // 旁观者
     public Location getSpectatorSpawn() {
         World world = Bukkit.getWorld(config.getString("game.spectator.spawn.world", getWorldName()));

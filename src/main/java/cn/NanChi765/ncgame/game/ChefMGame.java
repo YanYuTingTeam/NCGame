@@ -27,7 +27,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 
 import java.util.*;
 
@@ -46,16 +49,12 @@ public class ChefMGame implements Listener, IMinigame {
     private final List<ChefMConfig.ChestConfig> chestConfigs;
     private final Map<Location, BukkitTask> chestTasks = new HashMap<>();
     private final Map<EntityType, Integer> animalTypeCounts = new HashMap<>();
+    private final Random random = new Random();
     private GameState state;
     private int prepareTimer;
     private int gameTimer;
     private BukkitTask gameTask;
-    private final Random random = new Random();
     private boolean firstTaskDisplay = true;
-
-    private enum GameState {
-        WAITING, PREPARE, PLAYING, ENDED
-    }
 
     public ChefMGame(JavaPlugin plugin, ChefMConfig config, List<Player> players) {
         this.plugin = plugin;
@@ -225,8 +224,15 @@ public class ChefMGame implements Listener, IMinigame {
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PREPARE) { cancel(); return; }
-                if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
+                if (state != GameState.PREPARE) {
+                    cancel();
+                    return;
+                }
+                if (prepareTimer <= 0) {
+                    startPlayingPhase();
+                    cancel();
+                    return;
+                }
                 if (prepareTimer <= 10) {
                     String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
                     String subtitle = ChatColor.DARK_GREEN + "收集材料，提交任务！";
@@ -263,7 +269,10 @@ public class ChefMGame implements Listener, IMinigame {
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PLAYING) { cancel(); return; }
+                if (state != GameState.PLAYING) {
+                    cancel();
+                    return;
+                }
                 if (gameTimer > 0) gameTimer--;
                 if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
                     endGame();
@@ -720,5 +729,9 @@ public class ChefMGame implements Listener, IMinigame {
                 if (state == GameState.PLAYING) endGame();
             }, 20L);
         }
+    }
+
+    private enum GameState {
+        WAITING, PREPARE, PLAYING, ENDED
     }
 }

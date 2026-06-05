@@ -117,6 +117,7 @@ public class SnakeConfig {
         double z = config.getDouble("game.barrier.pos2.z", 0.0);
         return new Location(world, x, getBarrierY(), z);
     }
+
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }

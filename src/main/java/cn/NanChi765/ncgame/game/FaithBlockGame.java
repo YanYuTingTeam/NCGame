@@ -18,12 +18,20 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 
 import java.util.*;
 
 public class FaithBlockGame implements Listener, IMinigame {
 
+    // 颜色映射：数据值 -> 阶段标识（用于概率判断）
+    private static final byte WHITE = 0;
+    private static final byte YELLOW = 4;
+    private static final byte ORANGE = 1;
+    private static final byte RED = 14;
     private final JavaPlugin plugin;
     private final FaithBlockConfig config;
     private final List<Player> players;
@@ -31,22 +39,12 @@ public class FaithBlockGame implements Listener, IMinigame {
     private final List<Player> eliminatedPlayers;
     private final List<Player> lateSpectators = new ArrayList<>();
     private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
+    private final Random random = new Random();
     private GameState state;
     private int prepareTimer;
     private int gameTimer;
     private BukkitTask gameTask;
     private BukkitTask changeTask;
-    private final Random random = new Random();
-
-    // 颜色映射：数据值 -> 阶段标识（用于概率判断）
-    private static final byte WHITE = 0;
-    private static final byte YELLOW = 4;
-    private static final byte ORANGE = 1;
-    private static final byte RED = 14;
-
-    private enum GameState {
-        WAITING, PREPARE, PLAYING, ENDED
-    }
 
     public FaithBlockGame(JavaPlugin plugin, FaithBlockConfig config, List<Player> players) {
         this.plugin = plugin;
@@ -117,8 +115,15 @@ public class FaithBlockGame implements Listener, IMinigame {
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PREPARE) { cancel(); return; }
-                if (prepareTimer <= 0) { startPlayingPhase(); cancel(); return; }
+                if (state != GameState.PREPARE) {
+                    cancel();
+                    return;
+                }
+                if (prepareTimer <= 0) {
+                    startPlayingPhase();
+                    cancel();
+                    return;
+                }
                 if (prepareTimer <= 10) {
                     String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
                     String subtitle = ChatColor.DARK_GREEN + "地面会变色并消失！" + ChatColor.WHITE + "白->" + ChatColor.YELLOW + "黄->" + ChatColor.GOLD + "橙->" + ChatColor.RED + "红->" + ChatColor.WHITE + "消失";
@@ -152,7 +157,10 @@ public class FaithBlockGame implements Listener, IMinigame {
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PLAYING) { cancel(); return; }
+                if (state != GameState.PLAYING) {
+                    cancel();
+                    return;
+                }
                 if (gameTimer > 0) gameTimer--;
                 if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
                     endGame();
@@ -486,5 +494,9 @@ public class FaithBlockGame implements Listener, IMinigame {
                 if (state == GameState.PLAYING) endGame();
             }, 20L);
         }
+    }
+
+    private enum GameState {
+        WAITING, PREPARE, PLAYING, ENDED
     }
 }

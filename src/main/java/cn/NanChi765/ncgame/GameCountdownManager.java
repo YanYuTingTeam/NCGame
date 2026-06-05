@@ -18,21 +18,14 @@ public class GameCountdownManager {
     private boolean paused = false;              // 新增：暂停状态
     private GameStartCallback callback;
 
-    /**
-     * 游戏开始回调接口
-     */
-    public interface GameStartCallback {
-        void onGameStart();
-    }
-
-    public void setGameStartCallback(GameStartCallback callback) {
-        this.callback = callback;
-    }
-
     public GameCountdownManager(JavaPlugin plugin, LobbyConfig lobbyConfig) {
         this.plugin = plugin;
         this.lobbyConfig = lobbyConfig;
         startMonitor();
+    }
+
+    public void setGameStartCallback(GameStartCallback callback) {
+        this.callback = callback;
     }
 
     /**
@@ -122,5 +115,12 @@ public class GameCountdownManager {
 
     public int getCurrentCountdown() {
         return counting ? currentCountdown : 0;
+    }
+
+    /**
+     * 游戏开始回调接口
+     */
+    public interface GameStartCallback {
+        void onGameStart();
     }
 }

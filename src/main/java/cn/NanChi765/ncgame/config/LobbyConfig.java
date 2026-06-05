@@ -24,21 +24,40 @@ public class LobbyConfig {
     }
 
     // ========== 传送相关 ==========
-    public String getWorldName() { return config.getString("world", "world"); }
-    public double getX() { return config.getDouble("x", 0.0); }
-    public double getY() { return config.getDouble("y", 100.0); }
-    public double getZ() { return config.getDouble("z", 0.0); }
-    public float getYaw() { return (float) config.getDouble("yaw", 0.0); }
-    public float getPitch() { return (float) config.getDouble("pitch", 0.0); }
+    public String getWorldName() {
+        return config.getString("world", "world");
+    }
+
+    public double getX() {
+        return config.getDouble("x", 0.0);
+    }
+
+    public double getY() {
+        return config.getDouble("y", 100.0);
+    }
+
+    public double getZ() {
+        return config.getDouble("z", 0.0);
+    }
+
+    public float getYaw() {
+        return (float) config.getDouble("yaw", 0.0);
+    }
+
+    public float getPitch() {
+        return (float) config.getDouble("pitch", 0.0);
+    }
 
     // ========== 返回物品 ==========
     public Material getReturnMaterial() {
         Material m = Material.getMaterial(config.getString("return-item.material", "REDSTONE_BLOCK"));
         return m != null ? m : Material.REDSTONE_BLOCK;
     }
+
     public String getReturnItemName() {
         return ChatColor.translateAlternateColorCodes('&', config.getString("return-item.name", "&c返回大厅"));
     }
+
     public int getReturnSlot() {
         return config.getInt("return-item.slot", 8);
     }
@@ -49,9 +68,17 @@ public class LobbyConfig {
     }
 
     // ========== 游戏设置 ==========
-    public int getMinPlayers() { return config.getInt("game-settings.min-players", 2); }
-    public int getRequiredPlayers() { return config.getInt("game-settings.required-players", 2); }
-    public int getCountdownSeconds() { return config.getInt("game-settings.countdown-seconds", 30); }
+    public int getMinPlayers() {
+        return config.getInt("game-settings.min-players", 2);
+    }
+
+    public int getRequiredPlayers() {
+        return config.getInt("game-settings.required-players", 2);
+    }
+
+    public int getCountdownSeconds() {
+        return config.getInt("game-settings.countdown-seconds", 30);
+    }
 
     // ========== 计分板 ==========
     public boolean isScoreboardEnabled() {

@@ -117,9 +117,11 @@ public class SpeedrunConfig {
         return ChatColor.translateAlternateColorCodes('&',
                 config.getString("game.scoreboard.title", "&6急速酷跑"));
     }
+
     public double getDeathY() {
         return config.getDouble("game.death-y", 0.0);
     }
+
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
         List<String> colored = new ArrayList<>();

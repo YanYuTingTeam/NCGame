@@ -1,6 +1,9 @@
 package cn.nanchi765.ncgame.config;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -127,6 +130,7 @@ public class BombSheepConfig {
         return ChatColor.translateAlternateColorCodes('&',
                 config.getString("game.scoreboard.title", "&6炸弹羊"));
     }
+
     public double getDeathY() {
         return config.getDouble("game.death-y", 0.0);
     }
@@ -134,6 +138,7 @@ public class BombSheepConfig {
     public double getExplosionPower() {
         return config.getDouble("game.explosion-power", 2.0);
     }
+
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("game.scoreboard.lines");
         List<String> colored = new ArrayList<>();

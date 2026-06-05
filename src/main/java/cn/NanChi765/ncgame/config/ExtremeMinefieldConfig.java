@@ -111,6 +111,7 @@ public class ExtremeMinefieldConfig {
         double z = config.getDouble("game.spectator.region.center.z", 0.0);
         return new Location(world, x, y, z);
     }
+
     // 在类中添加以下方法
     public boolean isEffectEnabled() {
         return config.getBoolean("game.trap.effect.enabled", false);
@@ -123,6 +124,7 @@ public class ExtremeMinefieldConfig {
     public int getParticleCount() {
         return config.getInt("game.trap.effect.count", 30);
     }
+
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
@@ -137,6 +139,7 @@ public class ExtremeMinefieldConfig {
         return ChatColor.translateAlternateColorCodes('&',
                 config.getString("game.scoreboard.title", "&6极限雷区"));
     }
+
     public int getTeleportDelay() {
         return config.getInt("game.trap.teleport-delay", 20); // 默认20 tick = 1秒
     }

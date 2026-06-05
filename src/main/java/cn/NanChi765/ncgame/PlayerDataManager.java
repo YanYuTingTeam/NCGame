@@ -113,7 +113,7 @@ public class PlayerDataManager {
         String name = player.getName();
         if ("yaml".equals(storageType)) {
             dataConfig.set("players." + uuid.toString() + ".name", name);
-            dataConfig.set("players." + uuid.toString() + ".score", score);
+            dataConfig.set("players." + uuid + ".score", score);
             saveYaml();
         } else if ("mysql".equals(storageType)) {
             saveToMysql(uuid, name, score);
@@ -125,7 +125,7 @@ public class PlayerDataManager {
         String name = getPlayerName(uuid);
         if ("yaml".equals(storageType)) {
             dataConfig.set("players." + uuid.toString() + ".name", name);
-            dataConfig.set("players." + uuid.toString() + ".score", score);
+            dataConfig.set("players." + uuid + ".score", score);
             saveYaml();
         } else if ("mysql".equals(storageType)) {
             saveToMysql(uuid, name, score);
