@@ -59,9 +59,13 @@ public class SnowSpleefGame implements Listener, IMinigame {
         List<Player> players = new ArrayList<>(gameManager.getAlivePlayers());
         Collections.shuffle(players);
 
+        ItemStack shovel = createShovel();
+
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
             p.teleport(spawns.get(i % spawns.size()));
+            p.setGameMode(GameMode.SURVIVAL);
+            p.getInventory().setItem(0, shovel.clone());
         }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -69,11 +73,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-        ItemStack shovel = createShovel();
-        for (Player p : gameManager.getPlayers()) {
-            p.setGameMode(GameMode.SURVIVAL);
-            p.getInventory().setItem(0, shovel.clone());
-        }
     }
 
     @Override
@@ -86,6 +85,8 @@ public class SnowSpleefGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     @Override
@@ -106,7 +107,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
         }
 
         if (alivePlayers.size() <= 1) {
-            end();
+            gameManager.getGamePlayingTask().setCountdown(0);
         }
     }
 

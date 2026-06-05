@@ -77,7 +77,7 @@ public class ScoreBoardManager {
     // ======================== 变量替换 ========================
 
     private List<String> buildLines(List<String> template, Player player, boolean isLobby) {
-        int countdown    = resolveCountdown(isLobby);
+        String countdown = resolveCountdown(isLobby);
         int gameTime = isLobby
                 ? 0
                 : gameManager.getCurrentGame().getConfig().getGameTime();
@@ -92,8 +92,8 @@ public class ScoreBoardManager {
                     .replace("{current_players}", String.valueOf(currentSize))
                     .replace("{min_players}",      String.valueOf(minPlayers))
                     .replace("{required_players}",  String.valueOf(required))
-                    .replace("{countdown}",         String.valueOf(countdown))
-                    .replace("{time_left}",         String.valueOf(countdown))
+                    .replace("{countdown}", countdown)
+                    .replace("{time_left}", countdown)
                     .replace("{total_time}",        String.valueOf(gameTime))
                     .replace("{score}",      String.valueOf(playerScore));
             result.add(colorize(replaced));
@@ -102,20 +102,19 @@ public class ScoreBoardManager {
     }
 
 
-    private int resolveCountdown(boolean isLobby) {
+    private String resolveCountdown(boolean isLobby) {
         if (isLobby) {
             var startingTask = gameManager.getGameStartingTask();
             return startingTask != null
-                    ? startingTask.getCountdown()
-                    : lobbyConfig.getCountdownSeconds();
+                    ? String.valueOf(startingTask.getCountdown())
+                    : String.valueOf(lobbyConfig.getCountdownSeconds());
         }
 
         var playingTask = gameManager.getGamePlayingTask();
         return playingTask != null
-                ? playingTask.getCountdown()
-                : gameManager.getCurrentGame().getConfig().getGameTime();
+                ? String.valueOf(playingTask.getCountdown())
+                : "-";
     }
-
 
     // ======================== 工具 ========================
 

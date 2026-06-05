@@ -94,6 +94,8 @@ public class SpeedrunGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     // ======================== 结算辅助 ========================

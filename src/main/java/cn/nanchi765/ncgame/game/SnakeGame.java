@@ -113,6 +113,8 @@ public class SnakeGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     @Override

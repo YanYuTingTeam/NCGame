@@ -89,6 +89,8 @@ public class QuickHandsGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     @Override

@@ -3,7 +3,6 @@ package cn.nanchi765.ncgame;
 import cn.nanchi765.ncgame.config.EnableGameConfig;
 import cn.nanchi765.ncgame.config.LobbyConfig;
 import cn.nanchi765.ncgame.config.game.*;
-import cn.nanchi765.ncgame.config.game.*;
 import cn.nanchi765.ncgame.listener.*;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.PlayerDataManager;
@@ -13,7 +12,6 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -64,10 +62,11 @@ public class NCGame extends JavaPlugin {
         scoreBoardManager = new ScoreBoardManager(this, gameManager, lobbyConfig);
 
         getServer().getPluginManager().registerEvents(new FoodLevelChangeListener(), this);
-        getServer().getPluginManager().registerEvents(new InGameQuitListener(), this);
+        getServer().getPluginManager().registerEvents(new InGameListener(), this);
         getServer().getPluginManager().registerEvents(new LobbyListener(), this);
         getServer().getPluginManager().registerEvents(new SpecListener(), this);
         getServer().getPluginManager().registerEvents(new MOTDListener(), this);
+        getServer().getPluginManager().registerEvents(new WaitingListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
         worldResetManager = new WorldResetManager(this);

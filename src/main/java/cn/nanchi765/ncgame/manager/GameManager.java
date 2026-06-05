@@ -144,10 +144,18 @@ public class GameManager {
                 startNextGame();
                 return;
         }
-        this.setGamePrepareTask(new GamePrepareTask(this, currentGame));
+        if (gamePrepareTask == null) {
+            this.setGamePrepareTask(new GamePrepareTask(this, currentGame));
+        }
     }
 
     public void onMinigameEnd() {
+        System.out.println(currentGame.toString() + " 结束");
+        if (getGamePlayingTask() != null) {
+            this.getGamePlayingTask().cancel();
+            this.setGamePlayingTask(null);
+            return;
+        }
         currentGame = null;
         currentStatus = Status.ENDED;
         if (pendingGames.isEmpty()) {
@@ -158,7 +166,9 @@ public class GameManager {
             }
             currentStatus = Status.WAITING;
         } else {
-            startNextGame();
+            if (gamePrepareTask == null) {
+                startNextGame();
+            }
         }
     }
 

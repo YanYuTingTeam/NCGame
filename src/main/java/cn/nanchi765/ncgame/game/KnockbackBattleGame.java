@@ -84,6 +84,8 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         resetAllPlayers();
         broadcastRanking();
         HandlerList.unregisterAll(this);
+
+        
     }
 
     // ========== 物品创建 ==========
@@ -318,7 +320,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
         // 剩余1人或0人时自动结束
         if (alivePlayers.size() <= 1) {
-            end();
+            gameManager.getGamePlayingTask().setCountdown(0);
         }
     }
 }

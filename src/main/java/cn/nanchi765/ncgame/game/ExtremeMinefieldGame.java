@@ -112,6 +112,8 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
         }
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     @EventHandler

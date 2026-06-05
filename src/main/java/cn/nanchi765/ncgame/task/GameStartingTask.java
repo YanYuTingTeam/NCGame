@@ -42,7 +42,7 @@ public class GameStartingTask implements Runnable {
     public void run() {
         if (countdown-- > 0) {
 
-            if (countdown <= 5 && countdown > 0) {
+            if (countdown <= 10 && countdown > 0) {
                 String title = ChatColor.YELLOW + String.valueOf(countdown) + "秒后";
                 String subtitle = ChatColor.DARK_GREEN + "小游戏即将启动";
                 for (Player p : gameManager.getPlayers()) {

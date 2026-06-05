@@ -135,6 +135,8 @@ public class BombSheepGame implements Listener, IMinigame {
 
         // 清理
         HandlerList.unregisterAll(this);
+
+        
     }
 
     // ==================== 事件处理 ====================

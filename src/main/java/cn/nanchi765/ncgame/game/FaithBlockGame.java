@@ -90,6 +90,8 @@ public class FaithBlockGame implements Listener, IMinigame {
         cancelChangeTask();
         broadcastRanking();
         HandlerList.unregisterAll(this);
+
+        
     }
 
     // ========== 区域操作 ==========
@@ -305,9 +307,8 @@ public class FaithBlockGame implements Listener, IMinigame {
             p.sendTitle("", ChatColor.AQUA + player.getName() + " 被淘汰了", 0, 40, 10);
         }
 
-        // 剩余1人或0人时自动结束游戏
         if (alivePlayers.size() <= 1) {
-            end();
+            gameManager.getGamePlayingTask().setCountdown(0);
         }
     }
 

@@ -45,7 +45,7 @@ public class GamePlayingTask implements Runnable {
     @Override
     public void run() {
         if (countdown-- > 0) {
-            if (countdown <= 5 && countdown > 0) {
+            if (countdown <= 10 && countdown > 0) {
                 String title = ChatColor.YELLOW + String.valueOf(countdown) + "秒后";
                 String subtitle = ChatColor.DARK_GREEN + "游戏即将结束";
                 for (Player p : gameManager.getPlayers()) {
@@ -62,9 +62,6 @@ public class GamePlayingTask implements Runnable {
         gameManager.setGamePlayingTask(null);
         minigame.end();
         gameManager.onMinigameEnd();
-        for (Player player : gameManager.getPlayers()) {
-            Utils.resetPlayer(player);
-        }
     }
 
     public void cancel() {

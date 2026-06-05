@@ -46,6 +46,7 @@ public class LobbyListener implements Listener {
         gameManager.addPlayer(player);
         // 传送大厅
         teleportToLobby(player);
+        NCGame.getInstance().getScoreBoardManager().updateScoreBoard(player);
 
         // 达到人数 开始倒计时
         if (gameManager.getGameStartingTask() == null && gameManager.getPlayers().size() >= lobbyConfig.getMinPlayers()) {

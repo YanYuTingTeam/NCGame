@@ -53,7 +53,7 @@ public class GamePrepareTask implements Runnable {
     public void run() {
         if (gameManager.getPlayers().size() < reqPlayers) {
             this.cancel();
-            gameManager.onMinigameEnd();
+            
             return;
         }
         if (countdown-- > 0) {

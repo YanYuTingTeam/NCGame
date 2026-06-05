@@ -79,6 +79,8 @@ public class OneHitKillGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     // ======================== 准备阶段辅助 ========================
@@ -190,6 +192,10 @@ public class OneHitKillGame implements Listener, IMinigame {
         String title = ChatColor.AQUA + player.getName() + " 被一箭射杀";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
+        }
+
+        if (alivePlayers.size() <= 1) {
+            gameManager.getGamePlayingTask().setCountdown(0);
         }
     }
 

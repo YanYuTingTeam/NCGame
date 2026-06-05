@@ -67,8 +67,6 @@ public class ChefMGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
-
         Location spawn = config.getSpawnLocation();
         if (spawn == null) {
             plugin.getLogger().severe("厨神出生点未配置，游戏取消");
@@ -92,8 +90,6 @@ public class ChefMGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-
-
         for (Player player : gameManager.getAlivePlayers()) {
             int idx = taskIndex.getOrDefault(player, 0);
             if (idx < tasks.size()) {
@@ -111,7 +107,7 @@ public class ChefMGame implements Listener, IMinigame {
         chestTasks.clear();
         announceResults();
         HandlerList.unregisterAll(this);
-        gameManager.onMinigameEnd();
+        
     }
 
     private void spawnVillagers() {

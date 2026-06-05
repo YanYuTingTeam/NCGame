@@ -12,6 +12,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -124,6 +125,8 @@ public class CleanupGame implements Listener, IMinigame {
         }
 
         HandlerList.unregisterAll(this);
+
+        
     }
 
     @EventHandler
@@ -162,7 +165,7 @@ public class CleanupGame implements Listener, IMinigame {
     }
 
     @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
+    public void onDamage(EntityDamageEvent event) {
         if (Utils.isGameActive(this)) {
             event.setCancelled(true);
         }
