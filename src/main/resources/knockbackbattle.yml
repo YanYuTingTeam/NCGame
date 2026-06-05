@@ -1,0 +1,65 @@
+game:
+  world: "minigame_world"
+  spawns:
+    spawn1:
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn2:
+      x: 5.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn3:
+      x: 10.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn4:
+      x: 15.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+  # 死亡高度
+  death-y: 0.0
+  # 二段跳设置
+  double-jump:
+    enabled: true
+    up-velocity: 1.5              # 普通跳跃向上的速度
+    forward-velocity: 0.8         # 普通跳跃向前的速度（方向为玩家视线）
+    sprinting-up-velocity: 1.8    # 疾跑时向上的速度
+    sprinting-forward-velocity: 1.2  # 疾跑时向前的速度
+    cooldown: 1000                # 冷却时间（毫秒），0 为无冷却
+    keep-doublejump: false        # 是否保持二段跳（false 表示一次跳跃后落地才能再次使用）
+    fall-test: 3                  # 落地检测距离（检查脚下几格内是否有固体方块）
+  prepare-time: 10
+  game-time: 300
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "minigame_world"
+      x: 100.0
+      y: 70.0
+      z: 100.0
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 100.0
+        y: 70.0
+        z: 100.0
+      radius: 50
+  scoreboard:
+    title: "&6击退战"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"

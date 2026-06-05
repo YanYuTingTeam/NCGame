@@ -1,0 +1,109 @@
+game:
+  world: "minigame_world"
+  spawn:
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+  # 村民位置（用于提交任务）
+  villagers:
+    - x: 10.0
+      y: 64.0
+      z: 10.0
+    - x: 15.0
+      y: 64.0
+      z: 15.0
+  # 动物生成区域（两个对角坐标）
+  animal-region:
+    pos1:
+      x: -20.0
+      y: 64.0
+      z: -20.0
+    pos2:
+      x: 20.0
+      y: 70.0
+      z: 20.0
+  # 动物配置：每个动物种类与数量
+  animals:
+    COW: 5
+    PIG: 5
+    SHEEP: 5
+    CHICKEN: 5
+    RABBIT: 5
+  # 箱子刷新配置
+  chests:
+    chest1:
+      location:
+        x: 5.0
+        y: 65.0
+        z: 5.0
+      facing: SOUTH
+      items:
+        - WHEAT
+        - INK_SACK:3
+        - EGG
+      amount-min: 1
+      amount-max: 3
+      refill-delay: 20
+    chest2:
+      location:
+        x: 10.0
+        y: 65.0
+        z: 10.0
+      facing: SOUTH
+      items:
+        - RAW_FISH
+        - SUGAR
+        - MILK_BUCKET
+      amount-min: 1
+      amount-max: 3
+      refill-delay: 40
+  # 任务（保留原有的收集任务，可使用动物掉落物或箱子物品）
+  tasks:
+    1:
+      material: PORKCHOP
+      amount: 3
+      description: "&f收集 3 个生猪排"
+      display-name: "生猪排"
+    2:
+      material: BEEF
+      amount: 2
+      description: "&f收集 2 个生牛肉"
+      display-name: "生牛肉"
+    3:
+      material: CHICKEN
+      amount: 5
+      description: "&f收集 5 个生鸡肉"
+      display-name: "生鸡肉"
+    4:
+      material: MUTTON
+      amount: 3
+      description: "&f收集 3 个生羊肉"
+      display-name: "生羊肉"
+  prepare-time: 10
+  game-time: 300
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "minigame_world"
+      x: 100.0
+      y: 70.0
+      z: 100.0
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 100.0
+        y: 70.0
+        z: 100.0
+      radius: 50
+  scoreboard:
+    title: "&6厨神"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"

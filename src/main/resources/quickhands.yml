@@ -1,0 +1,145 @@
+game:
+  world: "world"
+  spawns:
+    spawn1:
+      x: -241.5
+      y: 247.0
+      z: -74.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn2:
+      x: -243.5
+      y: 247.0
+      z: -72.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn3:
+      x: -244.5
+      y: 247.0
+      z: -69.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn4:
+      x: -243.5
+      y: 247.0
+      z: -66.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn5:
+      x: -241.5
+      y: 247.0
+      z: -64.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn6:
+      x: -239.5
+      y: 247.0
+      z: -62.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn7:
+      x: -236.5
+      y: 247.0
+      z: -61.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn8:
+      x: -233.5
+      y: 247.0
+      z: -62.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn9:
+      x: -231.5
+      y: 247.0
+      z: -64.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn10:
+      x: -229.5
+      y: 247.0
+      z: -66.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn11:
+      x: -228.5
+      y: 247.0
+      z: -69.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn12:
+      x: -229.5
+      y: 247.0
+      z: -72.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn13:
+      x: -231.5
+      y: 247.0
+      z: -74.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn14:
+      x: -233.5
+      y: 247.0
+      z: -76.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn15:
+      x: -236.5
+      y: 247.0
+      z: -77.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn16:
+      x: -239.5
+      y: 247.0
+      z: -76.5
+      yaw: 0.0
+      pitch: 0.0
+  prepare-time: 10
+  game-time: 300
+  win-y: 23
+  # 可破坏方块（例如雪块，可根据需要修改）
+  breakable-blocks:
+    - WOOD
+    - DIRT
+    - STONE
+  # 工具配置：三个工具，固定为铁质，效率5
+  tools:
+    axe:
+      material: IRON_AXE
+      enchantment: DIG_SPEED
+      level: 5
+    pickaxe:
+      material: IRON_PICKAXE
+      enchantment: DIG_SPEED
+      level: 5
+    shovel:
+      material: IRON_SPADE
+      enchantment: DIG_SPEED
+      level: 5
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "world"
+      x: 100.0
+      y: 70.0
+      z: 100.0
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 100.0
+        y: 70.0
+        z: 100.0
+      radius: 50
+  scoreboard:
+    title: "&e眼疾手快"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"

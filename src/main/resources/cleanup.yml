@@ -1,0 +1,56 @@
+game:
+  world: "minigame_world"
+  spawn:
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+  breakable-blocks:
+    - SOUL_SAND
+    - SAND
+    - GRAVEL
+    - WALL_SIGN
+    - WOOD_PLATE
+    - DEAD_BUSH
+    - SNOW
+    - PODZOL
+    - MYCELIUM
+  break-limit-y: 33 # y=-1不启用
+  debug: false
+  tools:
+    shears:
+      material: SHEARS
+      name: "&a剪刀"
+    axe:
+      material: IRON_AXE
+      name: "&a铁斧"
+    shovel:
+      material: IRON_SPADE
+      name: "&a铁铲"
+  prepare-time: 10
+  game-time: 300
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "minigame_world"
+      x: 100.0
+      y: 70.0
+      z: 100.0
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 100.0
+        y: 70.0
+        z: 100.0
+      radius: 50
+  scoreboard:
+    title: "&6大扫除"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"

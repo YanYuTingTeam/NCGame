@@ -1,0 +1,54 @@
+game:
+  world: "minigame_world"
+  # 玩家出生点（可多个，随机分配）
+  spawns:
+    spawn1:
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn2:
+      x: 2.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+  # 胜利区域（两个对角坐标）
+  win-region:
+    world: "minigame_world"
+    pos1:
+      x: 100.0
+      y: 50.0
+      z: 100.0
+    pos2:
+      x: 105.0
+      y: 70.0
+      z: 105.0
+  death-y: 0.0
+  prepare-time: 8
+  game-time: 100
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "minigame_world"
+      x: 100.0
+      y: 70.0
+      z: 100.0
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 100.0
+        y: 70.0
+        z: 100.0
+      radius: 50
+  scoreboard:
+    title: "&6急速酷跑"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"

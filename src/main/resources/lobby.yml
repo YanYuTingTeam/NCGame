@@ -1,0 +1,38 @@
+# 大厅传送
+world: "lobby"
+x: 6.5
+y: 72.0
+z: -7.5
+yaw: 0.0
+pitch: 0.0
+
+# 返回大厅物品
+return-item:
+  material: "REDSTONE_BLOCK"
+  name: "&c返回大厅"
+  slot: 8
+
+# 目标 BungeeCord 服务器
+bungee-server: "lobby"
+
+# 游戏设置
+game-settings:
+  min-players: 2
+  required-players: 2
+  countdown-seconds: 30
+
+# 计分板
+scoreboard:
+  enabled: true
+  title: "&f[&d小&c游&3戏&e派&a对&f]"
+  lines:
+    - "    "
+    - "&f当前人数： &a{current_players}&f人"
+    - "   "
+    - "&f开始人数： &a{required_players}&f人"
+    - "  "
+    - "&f开始倒计时： &a{countdown}&fs"
+    - " "
+    - "&f你的积分： &a{player_score}"
+    - ""
+    - "&eyour minecraft server"

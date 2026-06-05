@@ -1,0 +1,13 @@
+# 小游戏开关配置
+games:
+  极限雷区: true
+  掘一死战: true
+  大扫除: true
+  急速酷跑: true
+  一箭必杀: true
+  厨神: true
+  眼疾手快: true
+  炸弹羊: true
+  击退战: true
+  贪吃蛇: true
+  信仰方块: true

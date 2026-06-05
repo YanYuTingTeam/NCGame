@@ -1,0 +1,53 @@
+game:
+  world: "minigame_world"
+  spawn:
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+  region:
+    pos1:
+      x: -10.0
+      y: 64.0
+      z: -10.0
+    pos2:
+      x: 10.0
+      y: 64.0
+      z: 10.0
+  death-y: 0.0
+  change-interval: 4          # 每多少 tick 执行一次变色（默认 4 tick = 0.2 秒）
+  change-amount-min: 10       # 每次最少变色方块数
+  change-amount-max: 20       # 每次最多变色方块数
+  probabilities:
+    white-to-yellow: 70       # 白色变黄色的概率（百分比，0-100）
+    yellow-to-orange: 50      # 黄色变橙色的概率
+    orange-to-red: 30         # 橙色变红色的概率
+    red-to-air: 10            # 红色消失的概率
+  phase-change-percent: 0.3   # 每次变色随机改变 30% 的可用方块
+  prepare-time: 10
+  game-time: 300
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "minigame_world"
+      x: 100.0
+      y: 70.0
+      z: 100.0
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 100.0
+        y: 70.0
+        z: 100.0
+      radius: 50
+  scoreboard:
+    title: "&6信仰方块"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"

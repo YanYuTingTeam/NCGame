@@ -1,0 +1,55 @@
+# 掘一死战 配置
+game:
+  world: "minigame_world"
+  # 玩家出生点（可多个，随机分配）
+  spawns:
+    spawn1:
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    spawn2:
+      x: 2.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+  # 准备时间（秒）
+  prepare-time: 8
+  # 游戏总时间（秒），0 表示无限制，直到只剩一人
+  game-time: 120
+  # 死亡高度 Y
+  death-y: 15
+  # 可破坏的两种方块
+  breakable-blocks:
+    - SNOW_BLOCK
+    - SNOW
+  # 铲子附魔：效率5 (EFFICIENCY, 5)
+  shovel-enchantment:
+    type: DIG_SPEED
+    level: 5
+  countdown-sound: true
+  spectator:
+    spawn:
+      world: "minigame_world"
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    region:
+      center:
+        x: 0.5
+        y: 64.0
+        z: 0.5
+      radius: 50
+  scoreboard:
+    title: "&e掘一死战"
+    lines:
+      - "&f时间: &a{time_left}&f/&a{total_time}&f秒"
+      - "&f积分: &a{score}"
+      - "&f-------------"
+      - "&f退出游戏: &a/hub"
+      - ""
+      - "&eyour minecraft server"
