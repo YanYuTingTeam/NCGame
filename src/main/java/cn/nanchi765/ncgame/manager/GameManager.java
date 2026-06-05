@@ -165,6 +165,10 @@ public class GameManager {
                 LobbyUtils.teleportToLobby(player);
             }
             currentStatus = Status.WAITING;
+            // 达到人数 开始倒计时
+            if (this.getGameStartingTask() == null && this.getPlayers().size() >= NCGame.getInstance().getLobbyConfig().getMinPlayers()) {
+                this.setGameStartingTask(new GameStartingTask(this));
+            }
         } else {
             if (gamePrepareTask == null) {
                 startNextGame();
