@@ -2,13 +2,11 @@ package cn.nanchi765.ncgame.config;
 
 import lombok.Getter;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -77,7 +75,12 @@ public class LobbyConfig {
 
     public ItemStack createReturnItem() {
         Material m = Material.getMaterial(config.getString("return-item.material", "REDSTONE_BLOCK"));
-        return new ItemStack(m, 1);
+        ItemStack itemStack = new ItemStack(m, 1);
+        itemStack.setDurability((short) config.getInt("return-item.data",0));
+        ItemMeta meta = itemStack.getItemMeta();
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', config.getString("return-item.name", "&c返回大厅")));
+        itemStack.setItemMeta(meta);
+        return itemStack;
     }
 
     public int getReturnSlot() {

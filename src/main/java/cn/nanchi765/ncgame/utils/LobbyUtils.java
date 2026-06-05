@@ -29,7 +29,7 @@ public class LobbyUtils {
         player.teleport(loc);
         Utils.resetPlayer(player);
         player.getInventory().setItem(7, createGuideBook());
-        player.getInventory().setItem(8, lobbyConfig.createReturnItem());
+        player.getInventory().setItem(lobbyConfig.getReturnSlot(), lobbyConfig.createReturnItem());
     }
 
     private static ItemStack createGuideBook() {
