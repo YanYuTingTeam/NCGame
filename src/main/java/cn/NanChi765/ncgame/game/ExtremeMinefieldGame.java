@@ -1,8 +1,11 @@
 package cn.nanchi765.ncgame.game;
 
-import cn.nanchi765.ncgame.IMinigame;
 import cn.nanchi765.ncgame.NCGame;
-import cn.nanchi765.ncgame.config.ExtremeMinefieldConfig;
+import cn.nanchi765.ncgame.config.game.ExtremeMinefieldConfig;
+import cn.nanchi765.ncgame.manager.GameManager;
+import cn.nanchi765.ncgame.manager.Status;
+import cn.nanchi765.ncgame.utils.Utils;
+import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,18 +13,10 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -29,36 +24,26 @@ import java.util.*;
 public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     private final JavaPlugin plugin;
+    @Getter
     private final ExtremeMinefieldConfig config;
-    private final List<Player> players;
-    private final List<Player> alivePlayers;
+    @Getter
+    private final GameManager gameManager;
     private final List<Player> finishedPlayers;
-    private final List<Player> eliminatedPlayers;
-    private final List<Player> lateSpectators = new ArrayList<>();
-    private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
     private final Map<Player, Location> spawnPoints = new HashMap<>();
-    private GameState state;
-    private int prepareTimer;
-    private int gameTimer;
-    private BukkitTask gameTask;
 
-    public ExtremeMinefieldGame(JavaPlugin plugin, ExtremeMinefieldConfig config, List<Player> players) {
+    public ExtremeMinefieldGame(JavaPlugin plugin, ExtremeMinefieldConfig config) {
         this.plugin = plugin;
         this.config = config;
-        this.players = new ArrayList<>(players);
-        this.alivePlayers = new ArrayList<>(players);
         this.finishedPlayers = new ArrayList<>();
-        this.eliminatedPlayers = new ArrayList<>();
-        this.state = GameState.WAITING;
+        this.gameManager = NCGame.getInstance().getGameManager();
     }
 
     @Override
-    public void start() {
-        if (plugin instanceof NCGame) ((NCGame) plugin).stopLobbyScoreboard();
+    public void prepare() {
 
         List<Location> spawns = new ArrayList<>(config.getSpawnLocations());
         Collections.shuffle(spawns);
-        List<Player> shuffledPlayers = new ArrayList<>(players);
+        List<Player> shuffledPlayers = new ArrayList<>(gameManager.getAlivePlayers());
         Collections.shuffle(shuffledPlayers);
 
         for (int i = 0; i < shuffledPlayers.size(); i++) {
@@ -75,131 +60,15 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
         }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        startPreparePhase();
     }
 
-    private void startPreparePhase() {
-        state = GameState.PREPARE;
-        prepareTimer = config.getPrepareTime();
+    @Override
+    public void start() {
 
-        gameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PREPARE) {
-                    cancel();
-                    return;
-                }
-                if (prepareTimer <= 0) {
-                    startPlayingPhase();
-                    cancel();
-                    return;
-                }
-                if (prepareTimer <= 10) {
-                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "避开压力板陷阱，第一个到达终点！";
-                    for (Player p : players) {
-                        p.sendTitle(title, subtitle, 0, 25, 5);
-                        if (config.isCountdownSoundEnabled())
-                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
-                    }
-                }
-                updateScoreboard(prepareTimer, config.getPrepareTime());
-                prepareTimer--;
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    private void startPlayingPhase() {
-        state = GameState.PLAYING;
-        for (Player p : players) p.setGameMode(GameMode.ADVENTURE);
-        gameTimer = config.getGameTime();
-        gameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PLAYING) {
-                    cancel();
-                    return;
-                }
-                if (gameTimer > 0) gameTimer--;
-                if (gameTimer <= 5 && gameTimer > 0) {
-                    String title = ChatColor.YELLOW + String.valueOf(gameTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "游戏即将结束";
-                    for (Player p : players) {
-                        p.sendTitle(title, subtitle, 0, 20, 10);
-                        if (config.isCountdownSoundEnabled())
-                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
-                    }
-                }
-                if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
-                    endGame();
-                    cancel();
-                    return;
-                }
-                updateScoreboard(gameTimer, config.getGameTime());
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
-    }
-
-    private int getRequiredPlayers() {
-        if (plugin instanceof NCGame) return ((NCGame) plugin).getLobbyConfig().getRequiredPlayers();
-        return 2;
-    }
-
-    private void updateScoreboard(int timeLeft, int totalTime) {
-        List<String> lines = config.getScoreboardLines();
-        if (lines.isEmpty()) return;
-        ScoreboardManager sm = Bukkit.getScoreboardManager();
-
-        for (Player p : players) {
-            Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("minefield", "dummy");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-            obj.setDisplayName(config.getScoreboardTitle());
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                int playerScore = 0;
-                if (plugin instanceof NCGame) playerScore = ((NCGame) plugin).getPlayerScore(p);
-                String replaced = replaceVariables(line, timeLeft, totalTime, playerScore);
-                obj.getScore(makeUnique(replaced, i)).setScore(score);
-                score--;
-            }
-            p.setScoreboard(board);
-        }
-
-        for (Player p : lateSpectators) {
-            Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("minefield", "dummy");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-            obj.setDisplayName(config.getScoreboardTitle());
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                int playerScore = 0;
-                if (plugin instanceof NCGame) playerScore = ((NCGame) plugin).getPlayerScore(p);
-                String replaced = replaceVariables(line, timeLeft, totalTime, playerScore);
-                obj.getScore(makeUnique(replaced, i)).setScore(score);
-                score--;
-            }
-            p.setScoreboard(board);
-        }
-    }
-
-    private String replaceVariables(String line, int timeLeft, int totalTime, int playerScore) {
-        return line.replace("{time_left}", String.valueOf(timeLeft))
-                .replace("{total_time}", String.valueOf(totalTime))
-                .replace("{score}", String.valueOf(playerScore));
-    }
-
-    private String makeUnique(String text, int index) {
-        if (text.trim().isEmpty()) return ChatColor.BLACK.toString();
-        ChatColor[] colors = ChatColor.values();
-        return text + colors[index % colors.length];
-    }
-
-    private void endGame() {
-        state = GameState.ENDED;
-
+    @Override
+    public void end() {
         // 只对完成的玩家排名
         Map<Player, Integer> playerRank = new LinkedHashMap<>();
         int rank = 1;
@@ -224,7 +93,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 ncGame.addScore(entry.getKey(), entry.getValue());
         }
 
-        for (Player p : players) {
+        for (Player p : gameManager.getAlivePlayers()) {
             if (finishedPlayers.contains(p)) {
                 int myRank = playerRank.get(p);
                 int myAdd = scoreAdd.getOrDefault(p, 0);
@@ -249,69 +118,16 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
             }
         }
 
-        cleanupAndReturnLobby();
-    }
-
-    private void cleanupAndReturnLobby() {
         HandlerList.unregisterAll(this);
-        if (gameTask != null) gameTask.cancel();
-
-        for (BukkitTask task : spectatorWatchTasks.values()) task.cancel();
-        spectatorWatchTasks.clear();
-
-        for (Player p : players) {
-            p.getInventory().clear();
-            p.getInventory().setArmorContents(null);
-            p.updateInventory();
-        }
-        for (Player p : lateSpectators) {
-            p.getInventory().clear();
-            p.getInventory().setArmorContents(null);
-            p.updateInventory();
-        }
-        for (Player p : players) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-        for (Player p : lateSpectators) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-
-        if (plugin instanceof NCGame) {
-            ((NCGame) plugin).onMinigameEnd();
-        }
-    }
-
-    @Override
-    public boolean isRunning() {
-        return state != GameState.ENDED && state != GameState.WAITING;
-    }
-
-    @Override
-    public void addLatePlayer(Player player) {
-        if (!lateSpectators.contains(player)) {
-            lateSpectators.add(player);
-            player.setGameMode(GameMode.SPECTATOR);
-            player.teleport(config.getSpectatorSpawn());
-            BukkitTask task = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!player.isOnline() || !lateSpectators.contains(player)) {
-                        cancel();
-                        spectatorWatchTasks.remove(player);
-                        return;
-                    }
-                    if (player.getGameMode() != GameMode.SPECTATOR) {
-                        player.setGameMode(GameMode.SPECTATOR);
-                    }
-                }
-            }.runTaskTimer(plugin, 0L, 20L);
-            spectatorWatchTasks.put(player, task);
-        }
     }
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (!players.contains(player) && !lateSpectators.contains(player)) return;
+        if (!Utils.isAlive(player)) return;
 
         // 准备阶段锁定
-        if (state == GameState.PREPARE && players.contains(player)) {
+        if (gameManager.getCurrentStatus() == Status.PREPARE) {
             Location spawn = spawnPoints.get(player);
             if (spawn != null && player.getLocation().distanceSquared(spawn) > 0.01) {
                 player.teleport(spawn);
@@ -319,13 +135,9 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
             return;
         }
 
-        // 旁观者模式保护
-        if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
-            player.setGameMode(GameMode.SPECTATOR);
-        }
-
+        List<Player> alivePlayers = gameManager.getAlivePlayers();
         // 意外掉落传送回出生点
-        if (players.contains(player) && state == GameState.PLAYING && alivePlayers.contains(player)) {
+        if (gameManager.getCurrentStatus() == Status.PLAYING && alivePlayers.contains(player)) {
             if (player.getLocation().getY() < 0.0) {
                 Location spawn = spawnPoints.get(player);
                 if (spawn != null) {
@@ -334,10 +146,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 }
                 return;
             }
-        }
-
-        // 胜利区域检测
-        if (players.contains(player) && state == GameState.PLAYING && alivePlayers.contains(player)) {
             if (!finishedPlayers.contains(player) && config.isInWinRegion(player.getLocation())) {
                 finishedPlayers.add(player);
                 player.setGameMode(GameMode.SPECTATOR);
@@ -347,20 +155,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                     p.sendTitle("", msg, 10, 70, 10);
                 }
                 if (finishedPlayers.size() == alivePlayers.size()) {
-                    endGame();
-                }
-                return;
-            }
-        }
-
-        // 旁观者区域限制
-        if (lateSpectators.contains(player) || finishedPlayers.contains(player) || !alivePlayers.contains(player)) {
-            Location loc = player.getLocation();
-            Location center = config.getSpectatorRegionCenter();
-            if (center != null && loc.getWorld().equals(center.getWorld())) {
-                double radius = config.getSpectatorRegionRadius();
-                if (loc.distanceSquared(center) > radius * radius) {
-                    player.teleport(config.getSpectatorSpawn());
+                    end();
                 }
             }
         }
@@ -370,10 +165,10 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     @EventHandler
     public void onPressurePlate(PlayerInteractEvent event) {
-        if (state != GameState.PLAYING) return;
+        if (!Utils.isGameActive(this)) return;
         if (event.getAction() != Action.PHYSICAL) return;
         Player player = event.getPlayer();
-        if (!players.contains(player) || !alivePlayers.contains(player)) return;
+        if (!Utils.isAlive(player)) return;
         if (finishedPlayers.contains(player)) return;
 
         Material type = event.getClickedBlock().getType();
@@ -409,66 +204,17 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
+        if (Utils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler
-    public void onFallDamage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player) && (state == GameState.PREPARE || state == GameState.PLAYING)) {
-                if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                    event.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onFoodChange(FoodLevelChangeEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player)) {
-                event.setCancelled(true);
-                player.setFoodLevel(20);
-                player.setSaturation(10f);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        if (players.contains(player)) {
-            eliminatePlayer(player);
-        }
-        if (lateSpectators.contains(player)) {
-            lateSpectators.remove(player);
-            BukkitTask task = spectatorWatchTasks.remove(player);
-            if (task != null) task.cancel();
-        }
-    }
-
-    private void eliminatePlayer(Player player) {
+    @Override
+    public void eliminatePlayer(Player player) {
+        List<Player> alivePlayers = gameManager.getAlivePlayers();
         if (!alivePlayers.remove(player)) return;
-        eliminatedPlayers.add(player);
+        Utils.resetPlayer(player);
         player.setGameMode(GameMode.SPECTATOR);
         player.teleport(config.getSpectatorSpawn());
-
-        for (Player p : players) {
-            p.sendTitle("", ChatColor.AQUA + player.getName() + " 被淘汰了", 0, 40, 10);
-        }
-
-        if (alivePlayers.size() < getRequiredPlayers()) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (state == GameState.PLAYING) endGame();
-            }, 20L);
-        }
-    }
-
-    private enum GameState {
-        WAITING, PREPARE, PLAYING, ENDED
     }
 }

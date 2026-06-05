@@ -1,5 +1,6 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -9,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.util.*;
 
-public class ChefMConfig {
+public class ChefMConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
@@ -180,10 +181,6 @@ public class ChefMConfig {
         return getLocationFrom("game.spectator.spawn");
     }
 
-    public Location getSpectatorRegionCenter() {
-        return getLocationFrom("game.spectator.region.center");
-    }
-
     private Location getLocationFrom(String path) {
         World world = getWorld();
         if (world == null) return null;
@@ -215,6 +212,11 @@ public class ChefMConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return "快速烹饪食物交给美食家";
     }
 
     // 内部类：独立箱子配置

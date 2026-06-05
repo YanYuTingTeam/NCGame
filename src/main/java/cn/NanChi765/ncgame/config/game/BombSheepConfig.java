@@ -1,23 +1,23 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QuickHandsConfig {
+public class BombSheepConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public QuickHandsConfig(File file) {
+    public BombSheepConfig(File file) {
         this.file = file;
         reload();
     }
@@ -26,7 +26,7 @@ public class QuickHandsConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
     }
 
-    // ===== 基础设置 =====
+    // 基础设置
     public String getWorldName() {
         return config.getString("game.world", "minigame_world");
     }
@@ -60,55 +60,43 @@ public class QuickHandsConfig {
         return config.getInt("game.game-time", 300);
     }
 
-    public double getDeathY() {
-        return config.getDouble("game.death-y", 0.0);
+    // 羊生成区域
+    public Location getSheepRegionPos1() {
+        World world = getWorld();
+        if (world == null) return null;
+        double x = config.getDouble("game.sheep-region.pos1.x", 0);
+        double y = config.getDouble("game.sheep-region.pos1.y", 64);
+        double z = config.getDouble("game.sheep-region.pos1.z", 0);
+        return new Location(world, x, y, z);
     }
 
-    public List<String> getBreakableBlocks() {
-        return config.getStringList("game.breakable-blocks");
+    public Location getSheepRegionPos2() {
+        World world = getWorld();
+        if (world == null) return null;
+        double x = config.getDouble("game.sheep-region.pos2.x", 0);
+        double y = config.getDouble("game.sheep-region.pos2.y", 64);
+        double z = config.getDouble("game.sheep-region.pos2.z", 0);
+        return new Location(world, x, y, z);
     }
 
-    // ===== 工具 =====
-    public String getAxeMaterial() {
-        return config.getString("game.tools.axe.material", "IRON_AXE");
+    public int getMaxSheep() {
+        return config.getInt("game.max-sheep", 16);
     }
 
-    public Enchantment getAxeEnchantment() {
-        String name = config.getString("game.tools.axe.enchantment", "DIG_SPEED");
-        return Enchantment.getByName(name);
+    public int getSpawnInterval() {
+        return config.getInt("game.spawn-interval", 40);
     }
 
-    public int getAxeLevel() {
-        return config.getInt("game.tools.axe.level", 5);
+    // 爆炸设置
+    public double getExplodeChance() {
+        return config.getDouble("game.explode-chance", 0.3);
     }
 
-    public String getPickaxeMaterial() {
-        return config.getString("game.tools.pickaxe.material", "IRON_PICKAXE");
+    public double getExplodeDamage() {
+        return config.getDouble("game.explode-damage", 4.0);
     }
 
-    public Enchantment getPickaxeEnchantment() {
-        String name = config.getString("game.tools.pickaxe.enchantment", "DIG_SPEED");
-        return Enchantment.getByName(name);
-    }
-
-    public int getPickaxeLevel() {
-        return config.getInt("game.tools.pickaxe.level", 5);
-    }
-
-    public String getShovelMaterial() {
-        return config.getString("game.tools.shovel.material", "IRON_SPADE");
-    }
-
-    public Enchantment getShovelEnchantment() {
-        String name = config.getString("game.tools.shovel.enchantment", "DIG_SPEED");
-        return Enchantment.getByName(name);
-    }
-
-    public int getShovelLevel() {
-        return config.getInt("game.tools.shovel.level", 5);
-    }
-
-    // ===== 旁观者 =====
+    // 旁观者
     public Location getSpectatorSpawn() {
         World world = Bukkit.getWorld(config.getString("game.spectator.spawn.world", getWorldName()));
         if (world == null) world = getWorld();
@@ -120,32 +108,27 @@ public class QuickHandsConfig {
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    public Location getSpectatorRegionCenter() {
-        World world = Bukkit.getWorld(config.getString("game.spectator.region.center.world", getWorldName()));
-        if (world == null) world = getWorld();
-        double x = config.getDouble("game.spectator.region.center.x", 0.0);
-        double y = config.getDouble("game.spectator.region.center.y", 64.0);
-        double z = config.getDouble("game.spectator.region.center.z", 0.0);
-        return new Location(world, x, y, z);
-    }
-
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
 
-    // ===== 音效 =====
+    // 音效
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
 
-    // ===== 计分板 =====
+    // 计分板
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6眼疾手快"));
+                config.getString("game.scoreboard.title", "&6炸弹羊"));
     }
 
-    public double getWinY() {
-        return config.getDouble("game.win-y", 100.0);
+    public double getDeathY() {
+        return config.getDouble("game.death-y", 0.0);
+    }
+
+    public double getExplosionPower() {
+        return config.getDouble("game.explosion-power", 2.0);
     }
 
     public List<String> getScoreboardLines() {
@@ -155,5 +138,10 @@ public class QuickHandsConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return "剪羊毛，但要小心炸弹羊！";
     }
 }

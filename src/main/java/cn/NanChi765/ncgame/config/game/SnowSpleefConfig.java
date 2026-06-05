@@ -1,22 +1,24 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BombSheepConfig {
+public class SnowSpleefConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public BombSheepConfig(File file) {
+    public SnowSpleefConfig(File file) {
         this.file = file;
         reload();
     }
@@ -25,7 +27,7 @@ public class BombSheepConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
     }
 
-    // 基础设置
+    // ===== 基础设置 =====
     public String getWorldName() {
         return config.getString("game.world", "minigame_world");
     }
@@ -59,43 +61,24 @@ public class BombSheepConfig {
         return config.getInt("game.game-time", 300);
     }
 
-    // 羊生成区域
-    public Location getSheepRegionPos1() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.sheep-region.pos1.x", 0);
-        double y = config.getDouble("game.sheep-region.pos1.y", 64);
-        double z = config.getDouble("game.sheep-region.pos1.z", 0);
-        return new Location(world, x, y, z);
+    public double getDeathY() {
+        return config.getDouble("game.death-y", 0.0);
     }
 
-    public Location getSheepRegionPos2() {
-        World world = getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("game.sheep-region.pos2.x", 0);
-        double y = config.getDouble("game.sheep-region.pos2.y", 64);
-        double z = config.getDouble("game.sheep-region.pos2.z", 0);
-        return new Location(world, x, y, z);
+    public Enchantment getShovelEnchantmentType() {
+        String type = config.getString("game.shovel-enchantment.type", "DIG_SPEED");
+        return Enchantment.getByName(type);
     }
 
-    public int getMaxSheep() {
-        return config.getInt("game.max-sheep", 16);
+    public int getShovelEnchantmentLevel() {
+        return config.getInt("game.shovel-enchantment.level", 5);
     }
 
-    public int getSpawnInterval() {
-        return config.getInt("game.spawn-interval", 40);
+    public List<String> getBreakableBlocks() {
+        return config.getStringList("game.breakable-blocks");
     }
 
-    // 爆炸设置
-    public double getExplodeChance() {
-        return config.getDouble("game.explode-chance", 0.3);
-    }
-
-    public double getExplodeDamage() {
-        return config.getDouble("game.explode-damage", 4.0);
-    }
-
-    // 旁观者
+    // ===== 旁观者 =====
     public Location getSpectatorSpawn() {
         World world = Bukkit.getWorld(config.getString("game.spectator.spawn.world", getWorldName()));
         if (world == null) world = getWorld();
@@ -107,36 +90,23 @@ public class BombSheepConfig {
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    public Location getSpectatorRegionCenter() {
-        World world = Bukkit.getWorld(config.getString("game.spectator.region.center.world", getWorldName()));
-        if (world == null) world = getWorld();
-        double x = config.getDouble("game.spectator.region.center.x", 0.0);
-        double y = config.getDouble("game.spectator.region.center.y", 64.0);
-        double z = config.getDouble("game.spectator.region.center.z", 0.0);
-        return new Location(world, x, y, z);
-    }
-
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
 
-    // 音效
+    // ===== 音效开关 =====
     public boolean isCountdownSoundEnabled() {
         return config.getBoolean("game.countdown-sound", true);
     }
 
-    // 计分板
+    // ===== 计分板配置 =====
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6炸弹羊"));
+                config.getString("game.scoreboard.title", "&6掘一死战"));
     }
 
-    public double getDeathY() {
-        return config.getDouble("game.death-y", 0.0);
-    }
-
-    public double getExplosionPower() {
-        return config.getDouble("game.explosion-power", 2.0);
+    public double getWinY() {
+        return config.getDouble("game.win-y", 100.0);
     }
 
     public List<String> getScoreboardLines() {
@@ -146,5 +116,10 @@ public class BombSheepConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return "挖掉或使用雪球打掉雪块，将其他人砸下去！";
     }
 }

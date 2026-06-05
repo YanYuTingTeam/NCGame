@@ -1,8 +1,10 @@
 package cn.nanchi765.ncgame.game;
 
-import cn.nanchi765.ncgame.IMinigame;
 import cn.nanchi765.ncgame.NCGame;
-import cn.nanchi765.ncgame.config.SnakeConfig;
+import cn.nanchi765.ncgame.config.game.SnakeConfig;
+import cn.nanchi765.ncgame.manager.GameManager;
+import cn.nanchi765.ncgame.utils.Utils;
+import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -12,183 +14,142 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.ScoreboardManager;
-import org.bukkit.util.Vector;
 
 import java.util.*;
 
 public class SnakeGame implements Listener, IMinigame {
 
-    private final JavaPlugin plugin;
-    private final SnakeConfig config;
-    private final List<Player> players;
-    private final List<Player> alivePlayers;
-    private final List<Player> eliminatedPlayers;
-    private final List<Player> lateSpectators = new ArrayList<>();
-    private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
-    private final List<String> vanishBlocks;
-    private final Set<UUID> wasOnGround = new HashSet<>();
-    private GameState state;
-    private int prepareTimer;
-    private int gameTimer;
-    private BukkitTask gameTask;
-    private BukkitTask vanishTask;
-    private BukkitTask speedTask;   // 新增：持续保持速度的任务
+    private static final String GAME_NAME = "贪吃蛇";
+    private static final int[] SCORE_TABLE = {10, 7, 5, 1};
+    private static final int LEADERBOARD_MAX_DISPLAY = 4;
 
-    public SnakeGame(JavaPlugin plugin, SnakeConfig config, List<Player> players) {
+    private final JavaPlugin plugin;
+    @Getter
+    private final SnakeConfig config;
+    private final GameManager gameManager;
+
+    private final Set<String> vanishBlockSet;
+    private BukkitTask vanishTask;
+
+    /**
+     * 掉落淘汰的 Y 坐标阈值
+     */
+    private final double deathY;
+
+    public SnakeGame(JavaPlugin plugin, SnakeConfig config) {
         this.plugin = plugin;
         this.config = config;
-        this.players = new ArrayList<>(players);
-        this.alivePlayers = new ArrayList<>(players);
-        this.eliminatedPlayers = new ArrayList<>();
-        this.vanishBlocks = config.getVanishBlocks();
-        this.state = GameState.WAITING;
+        this.gameManager = NCGame.getInstance().getGameManager();
+        this.vanishBlockSet = new HashSet<>(config.getVanishBlocks());
+        this.deathY = config.getDeathY() != 0 ? config.getDeathY() : 0;
+    }
+
+    // ======================== 生命周期 ========================
+
+    @Override
+    public void prepare() {
+        Location spawn = config.getSpawnLocation();
+        if (spawn == null || spawn.getWorld() == null) {
+            throw new IllegalStateException(GAME_NAME + " 出生点未配置或世界不存在");
+        }
+
+        List<Player> players = new ArrayList<>(gameManager.getAlivePlayers());
+
+        for (Player p : players) {
+            p.teleport(spawn);
+        }
+
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     @Override
     public void start() {
-        if (plugin instanceof NCGame) ((NCGame) plugin).stopLobbyScoreboard();
-
-        Location spawn = config.getSpawnLocation();
-        if (spawn == null) {
-            plugin.getLogger().severe("贪吃蛇出生点未配置，游戏取消");
-            endGameDirectly();
-            return;
-        }
-
-        for (Player p : players) {
-            p.teleport(spawn);
-            p.setGameMode(GameMode.ADVENTURE);
-            p.getInventory().clear();
-            p.setFoodLevel(20);
-            p.setSaturation(10);
-            p.setHealth(20);
-            p.setWalkSpeed(0.2f);
-            p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
-        }
-
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        startPreparePhase();
-    }
-
-    private void startPreparePhase() {
-        state = GameState.PREPARE;
-        prepareTimer = config.getPrepareTime();
-
-        gameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PREPARE) {
-                    cancel();
-                    return;
-                }
-                if (prepareTimer <= 0) {
-                    startPlayingPhase();
-                    cancel();
-                    return;
-                }
-                if (prepareTimer <= 10) {
-                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "脚下的方块即将消失，保持移动！";
-                    for (Player p : players) {
-                        p.sendTitle(title, subtitle, 0, 25, 5);
-                        if (config.isCountdownSoundEnabled())
-                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
-                    }
-                }
-                updateScoreboard(prepareTimer, config.getPrepareTime());
-                prepareTimer--;
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
-    }
-
-    private void startPlayingPhase() {
-        state = GameState.PLAYING;
-        for (Player p : players) {
-            p.setGameMode(GameMode.ADVENTURE);
-        }
-        gameTimer = config.getGameTime();
-
-        // 放置屏障
         placeBarriers();
 
-        // 设置 Timer 速度
-        double timerValue = config.getTimer();
-        final float speed = (float) Math.min(1.0f, 0.2 * timerValue);
-        for (Player p : players) {
+        float speed = (float) Math.min(1.0, 0.2 * config.getTimer());
+        for (Player p : gameManager.getPlayers()) {
+            p.setGameMode(GameMode.SURVIVAL);
             p.setWalkSpeed(speed);
         }
 
-        // 持续保持速度的任务（解决跳跃后丢失问题）
-        speedTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PLAYING) return;
-                for (Player p : alivePlayers) {
-                    if (p.getWalkSpeed() != speed) {
-                        p.setWalkSpeed(speed);
-                    }
-                }
-            }
-        }.runTaskTimer(plugin, 5L, 5L); // 每5 tick（0.25秒）检查并修正速度
-
-        // 方块消失定时器
         int interval = config.getVanishInterval();
         vanishTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (state != GameState.PLAYING) {
+                if (!Utils.isGameActive(SnakeGame.this)) {
                     cancel();
                     return;
                 }
-                for (Player p : alivePlayers) {
-                    Location loc = p.getLocation().getBlock().getRelative(0, -1, 0).getLocation();
-                    Material type = loc.getBlock().getType();
-                    if (vanishBlocks.contains(type.name())) {
-                        loc.getBlock().setType(Material.AIR);
+                for (Player p : gameManager.getAlivePlayers()) {
+                    Block below = p.getLocation().getBlock().getRelative(0, -1, 0);
+                    if (vanishBlockSet.contains(below.getType().name())) {
+                        below.setType(Material.AIR);
                     }
                 }
             }
         }.runTaskTimer(plugin, interval, interval);
-
-        gameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PLAYING) {
-                    cancel();
-                    return;
-                }
-                if (gameTimer > 0) gameTimer--;
-                if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
-                    endGame();
-                    cancel();
-                    return;
-                }
-                updateScoreboard(gameTimer, config.getGameTime());
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    private void placeBarriers() {
-        if (!config.isBarrierEnabled()) {
-            plugin.getLogger().info("贪吃蛇屏障未启用，跳过放置");
-            return;
+    @Override
+    public void end() {
+        if (vanishTask != null) {
+            vanishTask.cancel();
+            vanishTask = null;
         }
+
+        for (Player p : gameManager.getPlayers()) {
+            p.setWalkSpeed(0.2f);
+        }
+
+        Map<Player, Integer> rankings = buildRankings();
+        Map<Player, Integer> scoreMap = calculateScores(rankings);
+
+        applyScores(scoreMap);
+        notifyResults(rankings, scoreMap);
+        broadcastLeaderboard(rankings, scoreMap);
+
+        HandlerList.unregisterAll(this);
+    }
+
+    @Override
+    public void eliminatePlayer(Player player) {
+        List<Player> alivePlayers = gameManager.getAlivePlayers();
+        if (!alivePlayers.remove(player)) return;
+
+        Utils.resetPlayer(player);
+        player.setGameMode(GameMode.SPECTATOR);
+
+        Location spectatorSpawn = config.getSpectatorSpawn();
+        if (spectatorSpawn != null) {
+            player.teleport(spectatorSpawn);
+        }
+
+        String title = ChatColor.AQUA + player.getName() + " 掉下去了";
+        for (Player p : gameManager.getPlayers()) {
+            p.sendTitle("", title, 0, 40, 10);
+        }
+
+        if (alivePlayers.isEmpty()) {
+            end();
+        }
+    }
+
+    // ======================== 屏障放置 ========================
+
+    private void placeBarriers() {
+        if (!config.isBarrierEnabled()) return;
+
         Location pos1 = config.getBarrierPos1();
         Location pos2 = config.getBarrierPos2();
-        if (pos1 == null || pos2 == null) {
-            plugin.getLogger().warning("屏障坐标未配置或世界不存在");
+        if (pos1 == null || pos2 == null || pos1.getWorld() == null) {
+            plugin.getLogger().warning(GAME_NAME + " 屏障坐标未配置或世界不存在");
             return;
         }
+
         World world = pos1.getWorld();
         int y = config.getBarrierY();
         int minX = Math.min(pos1.getBlockX(), pos2.getBlockX());
@@ -206,316 +167,117 @@ public class SnakeGame implements Listener, IMinigame {
                 }
             }
         }
-        plugin.getLogger().info("贪吃蛇屏障已放置 " + count + " 个");
+        plugin.getLogger().info(GAME_NAME + " 屏障已放置 " + count + " 个");
     }
 
-    private int getRequiredPlayers() {
-        if (plugin instanceof NCGame) return ((NCGame) plugin).getLobbyConfig().getRequiredPlayers();
-        return 2;
+    // ======================== 结算辅助 ========================
+
+    private Map<Player, Integer> buildRankings() {
+        Map<Player, Integer> rankings = new LinkedHashMap<>();
+        List<Player> alivePlayers = gameManager.getAlivePlayers();
+
+        int nextRank = alivePlayers.isEmpty() ? 1 : 2;
+        for (Player p : alivePlayers) {
+            rankings.put(p, 1);
+        }
+
+        List<Player> eliminated = getEliminatedPlayers();
+        Collections.reverse(eliminated);
+        for (Player p : eliminated) {
+            rankings.put(p, nextRank++);
+        }
+
+        return rankings;
     }
 
-    private void updateScoreboard(int timeLeft, int totalTime) {
-        List<String> lines = config.getScoreboardLines();
-        if (lines.isEmpty()) return;
-        ScoreboardManager sm = Bukkit.getScoreboardManager();
-
-        for (Player p : players) {
-            Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("snake", "dummy");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-            obj.setDisplayName(config.getScoreboardTitle());
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                int playerScore = 0;
-                if (plugin instanceof NCGame) playerScore = ((NCGame) plugin).getPlayerScore(p);
-                String replaced = replaceVariables(line, timeLeft, totalTime, playerScore);
-                obj.getScore(makeUnique(replaced, i)).setScore(score);
-                score--;
+    private List<Player> getEliminatedPlayers() {
+        Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
+        List<Player> eliminated = new ArrayList<>();
+        for (Player p : gameManager.getPlayers()) {
+            if (!aliveSet.contains(p)) {
+                eliminated.add(p);
             }
-            p.setScoreboard(board);
         }
+        return eliminated;
+    }
 
-        for (Player p : lateSpectators) {
-            Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("snake", "dummy");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-            obj.setDisplayName(config.getScoreboardTitle());
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                int playerScore = 0;
-                if (plugin instanceof NCGame) playerScore = ((NCGame) plugin).getPlayerScore(p);
-                String replaced = replaceVariables(line, timeLeft, totalTime, playerScore);
-                obj.getScore(makeUnique(replaced, i)).setScore(score);
-                score--;
-            }
-            p.setScoreboard(board);
+    private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
+        Map<Player, Integer> scores = new HashMap<>();
+        rankings.forEach((player, rank) -> {
+            int index = rank - 1;
+            scores.put(player, index < SCORE_TABLE.length ? SCORE_TABLE[index] : 0);
+        });
+        return scores;
+    }
+
+    private void applyScores(Map<Player, Integer> scoreMap) {
+        if (!(plugin instanceof NCGame)) return;
+        NCGame ncGame = (NCGame) plugin;
+        scoreMap.forEach(ncGame::addScore);
+    }
+
+    private void notifyResults(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
+        for (Player p : gameManager.getPlayers()) {
+            int rank = rankings.getOrDefault(p, gameManager.getPlayers().size());
+            int add = scoreMap.getOrDefault(p, 0);
+            String suffix = add > 0 ? " (+" + add + "积分)" : "";
+            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + rank + " 名！" + suffix);
         }
     }
 
-    private String replaceVariables(String line, int timeLeft, int totalTime, int playerScore) {
-        return line.replace("{time_left}", String.valueOf(timeLeft))
-                .replace("{total_time}", String.valueOf(totalTime))
-                .replace("{score}", String.valueOf(playerScore));
-    }
+    private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
+        Bukkit.broadcastMessage(ChatColor.GOLD + "===== " + GAME_NAME + " 排行榜 =====");
 
-    private String makeUnique(String text, int index) {
-        if (text.trim().isEmpty()) return ChatColor.BLACK.toString();
-        ChatColor[] colors = ChatColor.values();
-        return text + colors[index % colors.length];
-    }
-
-    private void endGame() {
-        state = GameState.ENDED;
-        if (vanishTask != null) vanishTask.cancel();
-        if (speedTask != null) speedTask.cancel();
-
-        for (Player p : players) {
-            p.setWalkSpeed(0.2f);
-        }
-
-        List<Player> ranking = new ArrayList<>(eliminatedPlayers);
-        ranking.addAll(alivePlayers);
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        int rank = 1;
-        if (!alivePlayers.isEmpty()) {
-            for (Player p : alivePlayers) playerRank.put(p, 1);
-            rank = 2;
-        }
-        List<Player> revElim = new ArrayList<>(eliminatedPlayers);
-        Collections.reverse(revElim);
-        for (Player p : revElim) playerRank.put(p, rank++);
-
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            int r = entry.getValue();
-            int add = r == 1 ? 10 : r == 2 ? 7 : r == 3 ? 5 : r == 4 ? 1 : 0;
-            scoreAdd.put(entry.getKey(), add);
-        }
-
-        if (plugin instanceof NCGame) {
-            NCGame ncGame = (NCGame) plugin;
-            for (Map.Entry<Player, Integer> entry : scoreAdd.entrySet())
-                ncGame.addScore(entry.getKey(), entry.getValue());
-        }
-
-        for (Player p : players) {
-            int myRank = playerRank.getOrDefault(p, players.size());
-            int myAdd = scoreAdd.getOrDefault(p, 0);
-            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
-        }
-
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 贪吃蛇 排行榜 =====");
         int count = 0;
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (count >= 4) break;
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            int add = scoreAdd.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
+        for (Map.Entry<Player, Integer> entry : rankings.entrySet()) {
+            if (count >= LEADERBOARD_MAX_DISPLAY) break;
+            int add = scoreMap.getOrDefault(entry.getKey(), 0);
+            Bukkit.broadcastMessage(
+                    ChatColor.YELLOW + "第" + entry.getValue() + "名："
+                            + ChatColor.WHITE + entry.getKey().getName() + " (+" + add + "积分)");
             count++;
         }
-
-        cleanupAndReturnLobby();
     }
 
-    private void endGameDirectly() {
-        state = GameState.ENDED;
-        cleanupAndReturnLobby();
-    }
+    // ======================== 事件监听 ========================
 
-    private void cleanupAndReturnLobby() {
-        HandlerList.unregisterAll(this);
-        if (gameTask != null) gameTask.cancel();
-        if (vanishTask != null) vanishTask.cancel();
-        if (speedTask != null) speedTask.cancel();
-
-        for (BukkitTask task : spectatorWatchTasks.values()) task.cancel();
-        spectatorWatchTasks.clear();
-
-        for (Player p : players) {
-            p.setWalkSpeed(0.2f);
-            p.getInventory().clear();
-            p.getInventory().setArmorContents(null);
-            p.updateInventory();
-        }
-        for (Player p : lateSpectators) {
-            p.getInventory().clear();
-            p.getInventory().setArmorContents(null);
-            p.updateInventory();
-        }
-        for (Player p : players) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-        for (Player p : lateSpectators) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-
-        if (plugin instanceof NCGame) {
-            ((NCGame) plugin).onMinigameEnd();
-        }
-    }
-
-    @Override
-    public boolean isRunning() {
-        return state != GameState.ENDED && state != GameState.WAITING;
-    }
-
-    @Override
-    public void addLatePlayer(Player player) {
-        if (!lateSpectators.contains(player)) {
-            lateSpectators.add(player);
-            player.setGameMode(GameMode.SPECTATOR);
-            player.teleport(config.getSpectatorSpawn());
-            BukkitTask task = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!player.isOnline() || !lateSpectators.contains(player)) {
-                        cancel();
-                        spectatorWatchTasks.remove(player);
-                        return;
-                    }
-                    if (player.getGameMode() != GameMode.SPECTATOR) {
-                        player.setGameMode(GameMode.SPECTATOR);
-                    }
-                }
-            }.runTaskTimer(plugin, 0L, 20L);
-            spectatorWatchTasks.put(player, task);
-        }
-    }
-
-    // ========== 事件处理 ==========
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
+        if (!Utils.isGameActive(this)) return;
+
         Player player = event.getPlayer();
-        if (!players.contains(player) && !lateSpectators.contains(player)) return;
+        if (!Utils.isAlive(player)) return;
 
-        // 旁观者模式保护
-        if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
-            player.setGameMode(GameMode.SPECTATOR);
-        }
-
-        // 游戏进行中且玩家存活时：每次移动都强制更新行走速度，防止跳跃后丢失
-        if (state == GameState.PLAYING && alivePlayers.contains(player)) {
-            float targetSpeed = (float) Math.min(1.0f, 0.2 * config.getTimer());
-            if (player.getWalkSpeed() != targetSpeed) {
-                player.setWalkSpeed(targetSpeed);
-            }
-
-            // 可控跳跃高度（保持原有逻辑）
-            boolean onGroundNow = player.isOnGround() || isNearGround(player);
-            UUID uuid = player.getUniqueId();
-            if (wasOnGround.contains(uuid) && !onGroundNow) {
-                Vector vel = player.getVelocity();
-                vel.setY(config.getJumpPower());
-                player.setVelocity(vel);
-            }
-            if (onGroundNow) {
-                wasOnGround.add(uuid);
-            } else {
-                wasOnGround.remove(uuid);
-            }
-        }
-
-        // 存活玩家掉落死亡
-        if (alivePlayers.contains(player) && state == GameState.PLAYING) {
-            if (player.getLocation().getY() < config.getDeathY()) {
-                eliminatePlayer(player);
-                return;
-            }
-        }
-
-        // 旁观者区域限制
-        if (!alivePlayers.contains(player) || lateSpectators.contains(player)) {
-            Location loc = player.getLocation();
-            Location center = config.getSpectatorRegionCenter();
-            if (center != null && loc.getWorld().equals(center.getWorld())) {
-                double radius = config.getSpectatorRegionRadius();
-                if (loc.distanceSquared(center) > radius * radius) {
-                    player.teleport(config.getSpectatorSpawn());
-                }
-            }
+        if (player.getLocation().getY() < deathY) {
+            eliminatePlayer(player);
         }
     }
 
-    private boolean isNearGround(Player player) {
-        Location loc = player.getLocation().clone().subtract(0, 1, 0);
-        for (int i = 0; i < 3; i++) {
-            if (loc.getBlock().getType() != Material.AIR) {
-                return true;
+    @EventHandler
+    public void onDamage(EntityDamageEvent event) {
+        if (!Utils.isGameActive(this)) return;
+        if (!(event.getEntity() instanceof Player)) return;
+
+        if (event.getCause() == EntityDamageEvent.DamageCause.VOID) {
+            Player player = (Player) event.getEntity();
+            if (Utils.isAlive(player)) {
+                eliminatePlayer(player);
             }
-            loc.subtract(0, 1, 0);
         }
-        return false;
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDamageByEntity(EntityDamageByEntityEvent event) {
+        if (Utils.isGameActive(this)) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
+        if (Utils.isGameActive(this)) {
             event.setCancelled(true);
         }
-    }
-
-    @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onFallDamage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player) && (state == GameState.PREPARE || state == GameState.PLAYING)) {
-                if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                    event.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onFoodChange(FoodLevelChangeEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player)) {
-                event.setCancelled(true);
-                player.setFoodLevel(20);
-                player.setSaturation(10f);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        if (players.contains(player)) {
-            eliminatePlayer(player);
-        }
-        if (lateSpectators.contains(player)) {
-            lateSpectators.remove(player);
-            BukkitTask task = spectatorWatchTasks.remove(player);
-            if (task != null) task.cancel();
-        }
-    }
-
-    private void eliminatePlayer(Player player) {
-        if (!alivePlayers.remove(player)) return;
-        eliminatedPlayers.add(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(config.getSpectatorSpawn());
-        player.setWalkSpeed(0.2f);
-
-        for (Player p : players) {
-            p.sendTitle("", ChatColor.AQUA + player.getName() + " 掉下去了", 0, 40, 10);
-        }
-
-        if (alivePlayers.size() < getRequiredPlayers()) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (state == GameState.PLAYING) endGame();
-            }, 20L);
-        }
-    }
-
-    private enum GameState {
-        WAITING, PREPARE, PLAYING, ENDED
     }
 }

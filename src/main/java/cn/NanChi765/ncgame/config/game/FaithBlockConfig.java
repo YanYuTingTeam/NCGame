@@ -1,5 +1,6 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -11,7 +12,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FaithBlockConfig {
+public class FaithBlockConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
@@ -94,15 +95,6 @@ public class FaithBlockConfig {
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    public Location getSpectatorRegionCenter() {
-        World world = Bukkit.getWorld(config.getString("game.spectator.region.center.world", getWorldName()));
-        if (world == null) world = getWorld();
-        double x = config.getDouble("game.spectator.region.center.x", 0.0);
-        double y = config.getDouble("game.spectator.region.center.y", 64.0);
-        double z = config.getDouble("game.spectator.region.center.z", 0.0);
-        return new Location(world, x, y, z);
-    }
-
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
@@ -156,5 +148,10 @@ public class FaithBlockConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return ChatColor.DARK_GREEN + "地面会变色并消失！" + ChatColor.WHITE + "白->" + ChatColor.YELLOW + "黄->" + ChatColor.GOLD + "橙->" + ChatColor.RED + "红->" + ChatColor.WHITE + "消失";
     }
 }

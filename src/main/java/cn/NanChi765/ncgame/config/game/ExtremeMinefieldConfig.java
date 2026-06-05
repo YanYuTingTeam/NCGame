@@ -1,5 +1,6 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -11,7 +12,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExtremeMinefieldConfig {
+public class ExtremeMinefieldConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
@@ -103,15 +104,6 @@ public class ExtremeMinefieldConfig {
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    public Location getSpectatorRegionCenter() {
-        World world = Bukkit.getWorld(config.getString("game.spectator.region.center.world", getWorldName()));
-        if (world == null) world = getWorld();
-        double x = config.getDouble("game.spectator.region.center.x", 0.0);
-        double y = config.getDouble("game.spectator.region.center.y", 64.0);
-        double z = config.getDouble("game.spectator.region.center.z", 0.0);
-        return new Location(world, x, y, z);
-    }
-
     // 在类中添加以下方法
     public boolean isEffectEnabled() {
         return config.getBoolean("game.trap.effect.enabled", false);
@@ -151,5 +143,10 @@ public class ExtremeMinefieldConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return "避开压力板陷阱，第一个到达终点！";
     }
 }

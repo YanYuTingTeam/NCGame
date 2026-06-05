@@ -1,9 +1,14 @@
 package cn.nanchi765.ncgame.config;
 
-import org.bukkit.ChatColor;
+import lombok.Getter;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,6 +19,13 @@ public class LobbyConfig {
     private final File file;
     private FileConfiguration config;
 
+    @Getter
+    private String worldName;
+    private Location lobbyLocation;
+
+    @Getter
+    private ItemStack lobbyItem;
+
     public LobbyConfig(File file) {
         this.file = file;
         reload();
@@ -21,41 +33,51 @@ public class LobbyConfig {
 
     public void reload() {
         this.config = YamlConfiguration.loadConfiguration(file);
+
+        this.worldName = config.getString("world", "world");
+        double x = config.getDouble("x", 0.0);
+        double y = config.getDouble("y", 100.0);
+        double z = config.getDouble("z", 0.0);
+        float yaw = (float) config.getDouble("yaw", 0.0);
+        float pitch = (float) config.getDouble("pitch", 0.0);
+
+        World world = Bukkit.getWorld(worldName);
+        this.lobbyLocation = new Location(world, x, y, z, yaw, pitch);
+        world.setPVP(false);
+
+        lobbyItem = createReturnItem();
     }
 
-    // ========== 传送相关 ==========
-    public String getWorldName() {
-        return config.getString("world", "world");
+    /**
+     * 获取大厅 Location，自动补全 World 引用。
+     * 世界不存在时返回 null。
+     */
+    public Location getLocation() {
+        if (lobbyLocation.getWorld() == null) {
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) return null;
+            lobbyLocation.setWorld(world);
+        }
+        lobbyLocation.getWorld().setPVP(false);
+        return lobbyLocation.clone();
     }
 
-    public double getX() {
-        return config.getDouble("x", 0.0);
-    }
-
-    public double getY() {
-        return config.getDouble("y", 100.0);
-    }
-
-    public double getZ() {
-        return config.getDouble("z", 0.0);
-    }
-
-    public float getYaw() {
-        return (float) config.getDouble("yaw", 0.0);
-    }
-
-    public float getPitch() {
-        return (float) config.getDouble("pitch", 0.0);
+    /**
+     * 用外部指定的 World 构建 Location（忽略配置中的 world）。
+     */
+    public Location getLocation(World world) {
+        if (world == null) return null;
+        world.setPVP(false);
+        return new Location(world,
+                lobbyLocation.getX(), lobbyLocation.getY(), lobbyLocation.getZ(),
+                lobbyLocation.getYaw(), lobbyLocation.getPitch());
     }
 
     // ========== 返回物品 ==========
-    public Material getReturnMaterial() {
-        Material m = Material.getMaterial(config.getString("return-item.material", "REDSTONE_BLOCK"));
-        return m != null ? m : Material.REDSTONE_BLOCK;
-    }
 
-    public String getReturnItemName() {
-        return ChatColor.translateAlternateColorCodes('&', config.getString("return-item.name", "&c返回大厅"));
+    public ItemStack createReturnItem() {
+        Material m = Material.getMaterial(config.getString("return-item.material", "REDSTONE_BLOCK"));
+        return new ItemStack(m, 1);
     }
 
     public int getReturnSlot() {
@@ -63,11 +85,13 @@ public class LobbyConfig {
     }
 
     // ========== BungeeCord ==========
+
     public String getBungeeServer() {
         return config.getString("bungee-server", "lobby");
     }
 
     // ========== 游戏设置 ==========
+
     public int getMinPlayers() {
         return config.getInt("game-settings.min-players", 2);
     }
@@ -86,18 +110,11 @@ public class LobbyConfig {
     }
 
     public String getScoreboardTitle() {
-        return ChatColor.translateAlternateColorCodes('&', config.getString("scoreboard.title", "&6大厅"));
+        return config.getString("scoreboard.title", "&6大厅");
     }
 
-    /**
-     * 返回颜色转译后的模板行列表（不替换变量）
-     */
     public List<String> getScoreboardLines() {
         List<String> raw = config.getStringList("scoreboard.lines");
-        List<String> colored = new ArrayList<>();
-        for (String line : raw) {
-            colored.add(ChatColor.translateAlternateColorCodes('&', line));
-        }
-        return colored;
+        return new ArrayList<>(raw);
     }
 }

@@ -1,8 +1,10 @@
 package cn.nanchi765.ncgame.game;
 
-import cn.nanchi765.ncgame.IMinigame;
 import cn.nanchi765.ncgame.NCGame;
-import cn.nanchi765.ncgame.config.FaithBlockConfig;
+import cn.nanchi765.ncgame.config.game.FaithBlockConfig;
+import cn.nanchi765.ncgame.manager.GameManager;
+import cn.nanchi765.ncgame.utils.Utils;
+import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -12,93 +14,113 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.ScoreboardManager;
 
 import java.util.*;
 
 public class FaithBlockGame implements Listener, IMinigame {
 
-    // 颜色映射：数据值 -> 阶段标识（用于概率判断）
-    private static final byte WHITE = 0;
-    private static final byte YELLOW = 4;
-    private static final byte ORANGE = 1;
-    private static final byte RED = 14;
+    // ========== 常量 ==========
+    private static final byte COLOR_WHITE = 0;
+    private static final byte COLOR_YELLOW = 4;
+    private static final byte COLOR_ORANGE = 1;
+    private static final byte COLOR_RED = 14;
+    private static final byte COLOR_AIR = -1;
+
+    // 积分表：排名 -> 积分
+    private static final int[] SCORE_TABLE = {0, 10, 7, 5, 1};
+
+    // ========== 依赖 & 状态 ==========
     private final JavaPlugin plugin;
+    @Getter
     private final FaithBlockConfig config;
-    private final List<Player> players;
-    private final List<Player> alivePlayers;
-    private final List<Player> eliminatedPlayers;
-    private final List<Player> lateSpectators = new ArrayList<>();
-    private final Map<Player, BukkitTask> spectatorWatchTasks = new HashMap<>();
+    @Getter
+    private final GameManager gameManager;
     private final Random random = new Random();
-    private GameState state;
-    private int prepareTimer;
-    private int gameTimer;
-    private BukkitTask gameTask;
+
     private BukkitTask changeTask;
 
-    public FaithBlockGame(JavaPlugin plugin, FaithBlockConfig config, List<Player> players) {
+    // 缓存区域边界，避免每次事件/定时任务重复计算
+    private World regionWorld;
+    private int minX, maxX, minY, maxY, minZ, maxZ;
+
+    public FaithBlockGame(JavaPlugin plugin, FaithBlockConfig config) {
         this.plugin = plugin;
         this.config = config;
-        this.players = new ArrayList<>(players);
-        this.alivePlayers = new ArrayList<>(players);
-        this.eliminatedPlayers = new ArrayList<>();
-        this.state = GameState.WAITING;
+        this.gameManager = NCGame.getInstance().getGameManager();
+    }
+
+    // ========== 生命周期 ==========
+
+    @Override
+    public void prepare() {
+
+
+        if (config.getSpawnLocation() == null) {
+            plugin.getLogger().severe("信仰方块出生点未配置，游戏取消");
+            return;
+        }
+
+        cacheRegionBounds();
+        fillRegionWithWool(COLOR_WHITE);
+
+        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     @Override
     public void start() {
-        if (plugin instanceof NCGame) ((NCGame) plugin).stopLobbyScoreboard();
 
-        Location spawn = config.getSpawnLocation();
-        if (spawn == null) {
-            plugin.getLogger().severe("信仰方块出生点未配置，游戏取消");
-            endGameDirectly();
-            return;
-        }
 
-        // 初始化区域：全部白色羊毛
-        fillRegionWithWool(WHITE);
-
-        for (Player p : players) {
-            p.teleport(spawn);
-            p.setGameMode(GameMode.ADVENTURE);
-            p.getInventory().clear();
-            p.setFoodLevel(20);
-            p.setSaturation(10);
-            p.setHealth(20);
-            p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
-        }
-
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        startPreparePhase();
+        int interval = config.getChangeInterval();
+        changeTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (Utils.isGameActive(FaithBlockGame.this)) {
+                    doRandomColorChange();
+                }
+            }
+        }.runTaskTimer(plugin, 0L, interval);
     }
 
-    private void fillRegionWithWool(byte color) {
+    @Override
+    public void end() {
+        cancelChangeTask();
+        broadcastRanking();
+        HandlerList.unregisterAll(this);
+    }
+
+    // ========== 区域操作 ==========
+
+    /**
+     * 缓存区域边界坐标，仅在 prepare 时计算一次
+     */
+    private void cacheRegionBounds() {
         Location pos1 = config.getRegionPos1();
         Location pos2 = config.getRegionPos2();
         if (pos1 == null || pos2 == null) return;
-        World world = pos1.getWorld();
-        int minX = Math.min(pos1.getBlockX(), pos2.getBlockX());
-        int maxX = Math.max(pos1.getBlockX(), pos2.getBlockX());
-        int minY = Math.min(pos1.getBlockY(), pos2.getBlockY());
-        int maxY = Math.max(pos1.getBlockY(), pos2.getBlockY());
-        int minZ = Math.min(pos1.getBlockZ(), pos2.getBlockZ());
-        int maxZ = Math.max(pos1.getBlockZ(), pos2.getBlockZ());
+
+        this.regionWorld = pos1.getWorld();
+        this.minX = Math.min(pos1.getBlockX(), pos2.getBlockX());
+        this.maxX = Math.max(pos1.getBlockX(), pos2.getBlockX());
+        this.minY = Math.min(pos1.getBlockY(), pos2.getBlockY());
+        this.maxY = Math.max(pos1.getBlockY(), pos2.getBlockY());
+        this.minZ = Math.min(pos1.getBlockZ(), pos2.getBlockZ());
+        this.maxZ = Math.max(pos1.getBlockZ(), pos2.getBlockZ());
+    }
+
+    /**
+     * 将区域内所有非空气方块填充为指定颜色的羊毛
+     */
+    private void fillRegionWithWool(byte color) {
+        if (regionWorld == null) return;
 
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    Block block = world.getBlockAt(x, y, z);
+                    Block block = regionWorld.getBlockAt(x, y, z);
                     if (block.getType() != Material.AIR) {
                         block.setType(Material.WOOL);
                         block.setData(color);
@@ -108,395 +130,193 @@ public class FaithBlockGame implements Listener, IMinigame {
         }
     }
 
-    private void startPreparePhase() {
-        state = GameState.PREPARE;
-        prepareTimer = config.getPrepareTime();
-
-        gameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PREPARE) {
-                    cancel();
-                    return;
-                }
-                if (prepareTimer <= 0) {
-                    startPlayingPhase();
-                    cancel();
-                    return;
-                }
-                if (prepareTimer <= 10) {
-                    String title = ChatColor.YELLOW + String.valueOf(prepareTimer) + " 秒后";
-                    String subtitle = ChatColor.DARK_GREEN + "地面会变色并消失！" + ChatColor.WHITE + "白->" + ChatColor.YELLOW + "黄->" + ChatColor.GOLD + "橙->" + ChatColor.RED + "红->" + ChatColor.WHITE + "消失";
-                    for (Player p : players) {
-                        p.sendTitle(title, subtitle, 0, 25, 5);
-                        if (config.isCountdownSoundEnabled())
-                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
-                    }
-                }
-                updateScoreboard(prepareTimer, config.getPrepareTime());
-                prepareTimer--;
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
-    }
-
-    private void startPlayingPhase() {
-        state = GameState.PLAYING;
-        for (Player p : players) p.setGameMode(GameMode.ADVENTURE);
-        gameTimer = config.getGameTime();
-
-        // 启动定时变色任务（固定间隔）
-        int interval = config.getChangeInterval(); // tick
-        changeTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PLAYING) return;
-                doRandomColorChange();
-            }
-        }.runTaskTimer(plugin, 0L, interval); // 立即开始，然后每隔 interval tick 执行
-
-        gameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (state != GameState.PLAYING) {
-                    cancel();
-                    return;
-                }
-                if (gameTimer > 0) gameTimer--;
-                if (alivePlayers.size() < getRequiredPlayers() || (config.getGameTime() > 0 && gameTimer <= 0)) {
-                    endGame();
-                    cancel();
-                    return;
-                }
-                updateScoreboard(gameTimer, config.getGameTime());
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
-    }
-
+    /**
+     * 随机选取方块并尝试升级颜色
+     */
     private void doRandomColorChange() {
-        Location pos1 = config.getRegionPos1();
-        Location pos2 = config.getRegionPos2();
-        if (pos1 == null || pos2 == null) return;
-        World world = pos1.getWorld();
-        int minX = Math.min(pos1.getBlockX(), pos2.getBlockX());
-        int maxX = Math.max(pos1.getBlockX(), pos2.getBlockX());
-        int minY = Math.min(pos1.getBlockY(), pos2.getBlockY());
-        int maxY = Math.max(pos1.getBlockY(), pos2.getBlockY());
-        int minZ = Math.min(pos1.getBlockZ(), pos2.getBlockZ());
-        int maxZ = Math.max(pos1.getBlockZ(), pos2.getBlockZ());
+        if (regionWorld == null) return;
 
-        // 本次变色的目标数量
-        int target = config.getChangeAmountMin() + random.nextInt(config.getChangeAmountMax() - config.getChangeAmountMin() + 1);
+        int rangeX = maxX - minX + 1;
+        int rangeY = maxY - minY + 1;
+        int rangeZ = maxZ - minZ + 1;
+
+        int target = config.getChangeAmountMin()
+                + random.nextInt(config.getChangeAmountMax() - config.getChangeAmountMin() + 1);
+
         int changed = 0;
-        int attempts = 0;
-        int maxAttempts = target * 10; // 增加尝试次数，因为很多随机点可能不是羊毛
+        int maxAttempts = target * 10;
 
-        while (changed < target && attempts < maxAttempts) {
-            attempts++;
-            int x = minX + random.nextInt(maxX - minX + 1);
-            int y = minY + random.nextInt(maxY - minY + 1);
-            int z = minZ + random.nextInt(maxZ - minZ + 1);
+        for (int attempt = 0; changed < target && attempt < maxAttempts; attempt++) {
+            int x = minX + random.nextInt(rangeX);
+            int y = minY + random.nextInt(rangeY);
+            int z = minZ + random.nextInt(rangeZ);
 
-            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+            if (!regionWorld.isChunkLoaded(x >> 4, z >> 4)) continue;
 
-            Block block = world.getBlockAt(x, y, z);
-            if (block.getType() == Material.WOOL) {
-                byte currentData = block.getData();
-                byte nextData = tryUpgradeColor(currentData);
-                if (nextData != currentData) {
-                    if (nextData == -1) {
-                        block.setType(Material.AIR);
-                    } else {
-                        block.setData(nextData);
-                    }
-                    changed++;
-                }
+            Block block = regionWorld.getBlockAt(x, y, z);
+            if (block.getType() != Material.WOOL) continue;
+
+            byte newData = tryUpgradeColor(block.getData());
+            if (newData == block.getData()) continue;
+
+            if (newData == COLOR_AIR) {
+                block.setType(Material.AIR);
+            } else {
+                block.setData(newData);
             }
+            changed++;
         }
     }
 
     /**
-     * 根据当前颜色和配置的概率决定是否升级，返回新颜色（或 -1 表示消失），若未升级则返回原颜色。
+     * 根据当前颜色和配置概率决定是否升级。
+     * 返回新颜色，未升级则返回原颜色。
      */
     private byte tryUpgradeColor(byte current) {
-        int prob = random.nextInt(100) + 1; // 1-100
-        if (current == WHITE) {
-            if (prob <= config.getProbWhiteToYellow()) return YELLOW;
-        } else if (current == YELLOW) {
-            if (prob <= config.getProbYellowToOrange()) return ORANGE;
-        } else if (current == ORANGE) {
-            if (prob <= config.getProbOrangeToRed()) return RED;
-        } else if (current == RED) {
-            if (prob <= config.getProbRedToAir()) return -1; // 消失
-        }
-        return current; // 不变
+        int prob = random.nextInt(100) + 1;
+
+        if (current == COLOR_WHITE && prob <= config.getProbWhiteToYellow()) return COLOR_YELLOW;
+        if (current == COLOR_YELLOW && prob <= config.getProbYellowToOrange()) return COLOR_ORANGE;
+        if (current == COLOR_ORANGE && prob <= config.getProbOrangeToRed()) return COLOR_RED;
+        if (current == COLOR_RED && prob <= config.getProbRedToAir()) return COLOR_AIR;
+
+        return current;
     }
 
-    private int getRequiredPlayers() {
-        if (plugin instanceof NCGame) return ((NCGame) plugin).getLobbyConfig().getRequiredPlayers();
-        return 2;
-    }
+    // ========== 排名 & 积分 ==========
 
-    private void updateScoreboard(int timeLeft, int totalTime) {
-        List<String> lines = config.getScoreboardLines();
-        if (lines.isEmpty()) return;
-        ScoreboardManager sm = Bukkit.getScoreboardManager();
+    /**
+     * 计算排名、发放积分、广播排行榜
+     */
+    private void broadcastRanking() {
+        List<Player> alivePlayers = new ArrayList<>(gameManager.getAlivePlayers());
+        List<Player> allPlayers = gameManager.getPlayers();
 
-        for (Player p : players) {
-            Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("faith", "dummy");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-            obj.setDisplayName(config.getScoreboardTitle());
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                int playerScore = 0;
-                if (plugin instanceof NCGame) playerScore = ((NCGame) plugin).getPlayerScore(p);
-                String replaced = replaceVariables(line, timeLeft, totalTime, playerScore);
-                obj.getScore(makeUnique(replaced, i)).setScore(score);
-                score--;
+        // 收集被淘汰的玩家
+        Set<Player> aliveSet = new HashSet<>(alivePlayers);
+        List<Player> eliminated = new ArrayList<>();
+        for (Player p : allPlayers) {
+            if (!aliveSet.contains(p)) {
+                eliminated.add(p);
             }
-            p.setScoreboard(board);
         }
 
-        for (Player p : lateSpectators) {
-            Scoreboard board = sm.getNewScoreboard();
-            Objective obj = board.registerNewObjective("faith", "dummy");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-            obj.setDisplayName(config.getScoreboardTitle());
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                int playerScore = 0;
-                if (plugin instanceof NCGame) playerScore = ((NCGame) plugin).getPlayerScore(p);
-                String replaced = replaceVariables(line, timeLeft, totalTime, playerScore);
-                obj.getScore(makeUnique(replaced, i)).setScore(score);
-                score--;
-            }
-            p.setScoreboard(board);
-        }
-    }
-
-    private String replaceVariables(String line, int timeLeft, int totalTime, int playerScore) {
-        return line.replace("{time_left}", String.valueOf(timeLeft))
-                .replace("{total_time}", String.valueOf(totalTime))
-                .replace("{score}", String.valueOf(playerScore));
-    }
-
-    private String makeUnique(String text, int index) {
-        if (text.trim().isEmpty()) return ChatColor.BLACK.toString();
-        ChatColor[] colors = ChatColor.values();
-        return text + colors[index % colors.length];
-    }
-
-    private void endGame() {
-        state = GameState.ENDED;
-        if (changeTask != null) changeTask.cancel();
-
-        List<Player> ranking = new ArrayList<>(eliminatedPlayers);
-        ranking.addAll(alivePlayers);
+        // 构建排名：存活玩家并列第1，被淘汰玩家按淘汰顺序倒序排列
         Map<Player, Integer> playerRank = new LinkedHashMap<>();
         int rank = 1;
+
+        for (Player p : alivePlayers) {
+            playerRank.put(p, rank);
+        }
         if (!alivePlayers.isEmpty()) {
-            for (Player p : alivePlayers) playerRank.put(p, 1);
             rank = 2;
         }
-        List<Player> revElim = new ArrayList<>(eliminatedPlayers);
-        Collections.reverse(revElim);
-        for (Player p : revElim) playerRank.put(p, rank++);
 
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            int r = entry.getValue();
-            int add = r == 1 ? 10 : r == 2 ? 7 : r == 3 ? 5 : r == 4 ? 1 : 0;
-            scoreAdd.put(entry.getKey(), add);
+        // 最后被淘汰的排名靠前，最早被淘汰的排名靠后
+        Collections.reverse(eliminated);
+        for (Player p : eliminated) {
+            playerRank.put(p, rank++);
         }
+
+        // 计算积分并发放
+        Map<Player, Integer> scoreAdd = new HashMap<>();
+        playerRank.forEach((p, r) -> scoreAdd.put(p, getScoreByRank(r)));
 
         if (plugin instanceof NCGame) {
             NCGame ncGame = (NCGame) plugin;
-            for (Map.Entry<Player, Integer> entry : scoreAdd.entrySet()) {
-                ncGame.addScore(entry.getKey(), entry.getValue());
-            }
+            scoreAdd.forEach(ncGame::addScore);
         }
 
-        for (Player p : players) {
-            int myRank = playerRank.getOrDefault(p, players.size());
-            int myAdd = scoreAdd.getOrDefault(p, 0);
-            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
+        // 个人消息
+        for (Player p : allPlayers) {
+            int myRank = playerRank.getOrDefault(p, allPlayers.size());
+            int myScore = scoreAdd.getOrDefault(p, 0);
+            String suffix = myScore > 0 ? " (+" + myScore + "积分)" : "";
+            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + suffix);
         }
 
+        // 广播前4名
         Bukkit.broadcastMessage(ChatColor.GOLD + "===== 信仰方块 排行榜 =====");
-        int count = 0;
+        int displayed = 0;
         for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (count >= 4) break;
+            if (displayed >= 4) break;
             Player p = entry.getKey();
             int r = entry.getValue();
             int add = scoreAdd.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
-            count++;
-        }
-
-        cleanupAndReturnLobby();
-    }
-
-    private void endGameDirectly() {
-        state = GameState.ENDED;
-        cleanupAndReturnLobby();
-    }
-
-    private void cleanupAndReturnLobby() {
-        HandlerList.unregisterAll(this);
-        if (gameTask != null) gameTask.cancel();
-        if (changeTask != null) changeTask.cancel();
-
-        for (BukkitTask task : spectatorWatchTasks.values()) task.cancel();
-        spectatorWatchTasks.clear();
-
-        for (Player p : players) {
-            p.getInventory().clear();
-            p.getInventory().setArmorContents(null);
-            p.updateInventory();
-        }
-        for (Player p : lateSpectators) {
-            p.getInventory().clear();
-            p.getInventory().setArmorContents(null);
-            p.updateInventory();
-        }
-        for (Player p : players) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-        for (Player p : lateSpectators) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-
-        if (plugin instanceof NCGame) {
-            ((NCGame) plugin).onMinigameEnd();
+            Bukkit.broadcastMessage(
+                    ChatColor.YELLOW + "第" + r + "名："
+                            + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
+            displayed++;
         }
     }
 
-    @Override
-    public boolean isRunning() {
-        return state != GameState.ENDED && state != GameState.WAITING;
-    }
-
-    @Override
-    public void addLatePlayer(Player player) {
-        if (!lateSpectators.contains(player)) {
-            lateSpectators.add(player);
-            player.setGameMode(GameMode.SPECTATOR);
-            player.teleport(config.getSpectatorSpawn());
-            BukkitTask task = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!player.isOnline() || !lateSpectators.contains(player)) {
-                        cancel();
-                        spectatorWatchTasks.remove(player);
-                        return;
-                    }
-                    if (player.getGameMode() != GameMode.SPECTATOR) {
-                        player.setGameMode(GameMode.SPECTATOR);
-                    }
-                }
-            }.runTaskTimer(plugin, 0L, 20L);
-            spectatorWatchTasks.put(player, task);
+    private int getScoreByRank(int rank) {
+        if (rank >= 1 && rank < SCORE_TABLE.length) {
+            return SCORE_TABLE[rank];
         }
+        return 0;
     }
 
-    // ========== 事件处理 ==========
+    // ========== 事件监听 ==========
+
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
+        if (!Utils.isGameActive(this)) return;
+
         Player player = event.getPlayer();
-        if (!players.contains(player) && !lateSpectators.contains(player)) return;
-
-        if (lateSpectators.contains(player) && player.getGameMode() != GameMode.SPECTATOR) {
-            player.setGameMode(GameMode.SPECTATOR);
-        }
-
-        // 死亡高度
-        if (alivePlayers.contains(player) && (state == GameState.PLAYING || state == GameState.PREPARE)) {
-            if (player.getLocation().getY() < config.getDeathY()) {
-                eliminatePlayer(player);
-                return;
-            }
-        }
-
-        // 旁观者区域限制
-        if (!alivePlayers.contains(player) || lateSpectators.contains(player)) {
-            Location loc = player.getLocation();
-            Location center = config.getSpectatorRegionCenter();
-            if (center != null && loc.getWorld().equals(center.getWorld())) {
-                double radius = config.getSpectatorRegionRadius();
-                if (loc.distanceSquared(center) > radius * radius) {
-                    player.teleport(config.getSpectatorSpawn());
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
-        if (state == GameState.PREPARE || state == GameState.PLAYING) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onFallDamage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player) && (state == GameState.PREPARE || state == GameState.PLAYING)) {
-                if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                    event.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onFoodChange(FoodLevelChangeEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
-            if (players.contains(player)) {
-                event.setCancelled(true);
-                player.setFoodLevel(20);
-                player.setSaturation(10f);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        if (players.contains(player)) {
+        if (player.getLocation().getY() < config.getDeathY()) {
             eliminatePlayer(player);
         }
-        if (lateSpectators.contains(player)) {
-            lateSpectators.remove(player);
-            BukkitTask task = spectatorWatchTasks.remove(player);
-            if (task != null) task.cancel();
-        }
     }
 
-    private void eliminatePlayer(Player player) {
-        if (!alivePlayers.remove(player)) return;
-        eliminatedPlayers.add(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(config.getSpectatorSpawn());
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (!Utils.isGameActive(this)) return;
+        event.setCancelled(true);
+    }
 
-        for (Player p : players) {
+    @EventHandler(ignoreCancelled = true)
+    public void onDamage(EntityDamageByEntityEvent event) {
+        if (!Utils.isGameActive(this)) return;
+        event.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFallDamage(EntityDamageEvent event) {
+        if (!Utils.isGameActive(this)) return;
+        event.setCancelled(true);
+    }
+
+    // ========== 淘汰逻辑 ==========
+
+    public void eliminatePlayer(Player player) {
+        List<Player> alivePlayers = gameManager.getAlivePlayers();
+        if (!alivePlayers.remove(player)) return;
+
+        Utils.resetPlayer(player);
+        player.setGameMode(GameMode.SPECTATOR);
+
+        Location spectatorSpawn = config.getSpectatorSpawn();
+        if (spectatorSpawn != null) {
+            player.teleport(spectatorSpawn);
+        }
+
+        for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", ChatColor.AQUA + player.getName() + " 被淘汰了", 0, 40, 10);
         }
 
-        if (alivePlayers.size() < getRequiredPlayers()) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (state == GameState.PLAYING) endGame();
-            }, 20L);
+        // 剩余1人或0人时自动结束游戏
+        if (alivePlayers.size() <= 1) {
+            end();
         }
     }
 
-    private enum GameState {
-        WAITING, PREPARE, PLAYING, ENDED
+    // ========== 工具方法 ==========
+
+    private void cancelChangeTask() {
+        if (changeTask != null) {
+            changeTask.cancel();
+            changeTask = null;
+        }
     }
 }

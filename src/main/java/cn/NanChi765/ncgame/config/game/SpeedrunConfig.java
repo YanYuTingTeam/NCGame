@@ -1,5 +1,6 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -11,12 +12,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OneHitKillConfig {
+public class SpeedrunConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
 
-    public OneHitKillConfig(File file) {
+    public SpeedrunConfig(File file) {
         this.file = file;
         reload();
     }
@@ -59,6 +60,29 @@ public class OneHitKillConfig {
         return config.getInt("game.game-time", 300);
     }
 
+    // 胜利区域判断
+    public boolean isInWinRegion(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return false;
+        String winWorld = config.getString("game.win-region.world", getWorldName());
+        if (!world.getName().equals(winWorld)) return false;
+
+        double x1 = config.getDouble("game.win-region.pos1.x", 0);
+        double y1 = config.getDouble("game.win-region.pos1.y", 0);
+        double z1 = config.getDouble("game.win-region.pos1.z", 0);
+        double x2 = config.getDouble("game.win-region.pos2.x", 0);
+        double y2 = config.getDouble("game.win-region.pos2.y", 0);
+        double z2 = config.getDouble("game.win-region.pos2.z", 0);
+
+        double minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+        double minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+        double minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+
+        return loc.getX() >= minX && loc.getX() <= maxX
+                && loc.getY() >= minY && loc.getY() <= maxY
+                && loc.getZ() >= minZ && loc.getZ() <= maxZ;
+    }
+
     // 旁观者
     public Location getSpectatorSpawn() {
         World world = Bukkit.getWorld(config.getString("game.spectator.spawn.world", getWorldName()));
@@ -69,15 +93,6 @@ public class OneHitKillConfig {
         float yaw = (float) config.getDouble("game.spectator.spawn.yaw", 0.0);
         float pitch = (float) config.getDouble("game.spectator.spawn.pitch", 0.0);
         return new Location(world, x, y, z, yaw, pitch);
-    }
-
-    public Location getSpectatorRegionCenter() {
-        World world = Bukkit.getWorld(config.getString("game.spectator.region.center.world", getWorldName()));
-        if (world == null) world = getWorld();
-        double x = config.getDouble("game.spectator.region.center.x", 0.0);
-        double y = config.getDouble("game.spectator.region.center.y", 64.0);
-        double z = config.getDouble("game.spectator.region.center.z", 0.0);
-        return new Location(world, x, y, z);
     }
 
     public double getSpectatorRegionRadius() {
@@ -92,7 +107,11 @@ public class OneHitKillConfig {
     // 计分板
     public String getScoreboardTitle() {
         return ChatColor.translateAlternateColorCodes('&',
-                config.getString("game.scoreboard.title", "&6一箭必杀"));
+                config.getString("game.scoreboard.title", "&6急速酷跑"));
+    }
+
+    public double getDeathY() {
+        return config.getDouble("game.death-y", 0.0);
     }
 
     public List<String> getScoreboardLines() {
@@ -102,5 +121,10 @@ public class OneHitKillConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return "全速奔跑，第一个到达终点！";
     }
 }

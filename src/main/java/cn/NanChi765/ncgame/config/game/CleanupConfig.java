@@ -1,5 +1,6 @@
-package cn.nanchi765.ncgame.config;
+package cn.nanchi765.ncgame.config.game;
 
+import cn.nanchi765.ncgame.config.GameConfig;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -8,7 +9,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CleanupConfig {
+public class CleanupConfig implements GameConfig {
 
     private final File file;
     private FileConfiguration config;
@@ -101,15 +102,6 @@ public class CleanupConfig {
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    public Location getSpectatorRegionCenter() {
-        World world = Bukkit.getWorld(config.getString("game.spectator.region.center.world", getWorldName()));
-        if (world == null) world = getWorld();
-        double x = config.getDouble("game.spectator.region.center.x", 0.0);
-        double y = config.getDouble("game.spectator.region.center.y", 64.0);
-        double z = config.getDouble("game.spectator.region.center.z", 0.0);
-        return new Location(world, x, y, z);
-    }
-
     public double getSpectatorRegionRadius() {
         return config.getDouble("game.spectator.region.radius", 50.0);
     }
@@ -141,5 +133,10 @@ public class CleanupConfig {
             colored.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return colored;
+    }
+
+    @Override
+    public String subtitle() {
+        return "破坏方块，收集最多积分！";
     }
 }
