@@ -105,7 +105,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
             p.sendTitle("", title, 0, 40, 10);
         }
 
-        if (alivePlayers.isEmpty()) {
+        if (alivePlayers.size() <= 1) {
             end();
         }
     }

@@ -53,8 +53,6 @@ public class QuickHandsGame implements Listener, IMinigame {
 
     @Override
     public void prepare() {
-
-
         List<Location> spawns = new ArrayList<>(config.getSpawnLocations());
         if (spawns.isEmpty()) {
             throw new IllegalStateException(GAME_NAME + " 未配置出生点");

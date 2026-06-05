@@ -95,7 +95,7 @@ public class ScoreBoardManager {
                     .replace("{countdown}",         String.valueOf(countdown))
                     .replace("{time_left}",         String.valueOf(countdown))
                     .replace("{total_time}",        String.valueOf(gameTime))
-                    .replace("{player_score}",      String.valueOf(playerScore));
+                    .replace("{score}",      String.valueOf(playerScore));
             result.add(colorize(replaced));
         }
         return result;
@@ -103,14 +103,19 @@ public class ScoreBoardManager {
 
 
     private int resolveCountdown(boolean isLobby) {
-        var startingTask = gameManager.getGameStartingTask();
-        if (startingTask != null) {
-            return startingTask.getCountdown();
+        if (isLobby) {
+            var startingTask = gameManager.getGameStartingTask();
+            return startingTask != null
+                    ? startingTask.getCountdown()
+                    : lobbyConfig.getCountdownSeconds();
         }
-        return isLobby
-                ? lobbyConfig.getCountdownSeconds()
+
+        var playingTask = gameManager.getGamePlayingTask();
+        return playingTask != null
+                ? playingTask.getCountdown()
                 : gameManager.getCurrentGame().getConfig().getGameTime();
     }
+
 
     // ======================== 工具 ========================
 

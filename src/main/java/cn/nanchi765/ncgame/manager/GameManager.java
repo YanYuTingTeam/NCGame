@@ -144,7 +144,6 @@ public class GameManager {
                 startNextGame();
                 return;
         }
-        currentGame.prepare();
         this.setGamePrepareTask(new GamePrepareTask(this, currentGame));
     }
 

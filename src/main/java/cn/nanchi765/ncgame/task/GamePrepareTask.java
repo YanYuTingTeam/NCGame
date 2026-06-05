@@ -38,6 +38,7 @@ public class GamePrepareTask implements Runnable {
         for (Player player : gameManager.getPlayers()) {
             Utils.resetPlayer(player);
         }
+        minigame.prepare();
     }
 
     public int getTask() {
@@ -61,7 +62,7 @@ public class GamePrepareTask implements Runnable {
                 String subtitle = ChatColor.DARK_GREEN + gameConfig.subtitle();
                 boolean playSound = gameConfig.isCountdownSoundEnabled();
                 for (Player p : gameManager.getPlayers()) {
-                    p.sendTitle(title, subtitle, 0, 25, 5);
+                    p.sendTitle(title, subtitle, 0, 25, 10);
                     if (playSound) {
                         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
                     }
