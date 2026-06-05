@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
@@ -195,7 +196,7 @@ public class OneHitKillGame implements Listener, IMinigame {
         }
 
         if (alivePlayers.size() <= 1) {
-            gameManager.getGamePlayingTask().setCountdown(0);
+            gameManager.getGamePlayingTask().setCountdown(-1);
         }
     }
 
@@ -234,6 +235,13 @@ public class OneHitKillGame implements Listener, IMinigame {
     @EventHandler
     public void onFallDamage(EntityDamageEvent event) {
         if (Utils.isGameActive(this) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (Utils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }
