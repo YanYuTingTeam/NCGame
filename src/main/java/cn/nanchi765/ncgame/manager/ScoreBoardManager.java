@@ -111,10 +111,17 @@ public class ScoreBoardManager {
         }
 
         var playingTask = gameManager.getGamePlayingTask();
-        return playingTask != null
-                ? String.valueOf(playingTask.getCountdown())
-                : "-";
+        if (playingTask != null) {
+            return String.valueOf(playingTask.getCountdown());
+        }
+
+        if (gameManager.getCurrentStatus() == Status.PREPARE) {
+            return String.valueOf(gameManager.getCurrentGame().getConfig().getGameTime());
+        }
+
+        return "-";
     }
+
 
     // ======================== 工具 ========================
 
