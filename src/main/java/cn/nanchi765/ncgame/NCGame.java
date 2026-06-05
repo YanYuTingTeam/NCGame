@@ -4,6 +4,10 @@ import cn.nanchi765.ncgame.config.EnableGameConfig;
 import cn.nanchi765.ncgame.config.LobbyConfig;
 import cn.nanchi765.ncgame.config.game.*;
 import cn.nanchi765.ncgame.config.game.*;
+import cn.nanchi765.ncgame.listener.FoodLevelChangeListener;
+import cn.nanchi765.ncgame.listener.InGameQuitListener;
+import cn.nanchi765.ncgame.listener.LobbyListener;
+import cn.nanchi765.ncgame.listener.SpecListener;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.PlayerDataManager;
 import cn.nanchi765.ncgame.manager.ScoreBoardManager;
@@ -21,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class NCGame extends JavaPlugin implements Listener {
+public class NCGame extends JavaPlugin {
 
     @Getter
     private static NCGame instance;
@@ -59,7 +63,10 @@ public class NCGame extends JavaPlugin implements Listener {
         lobbyConfig = new LobbyConfig(new File(getDataFolder(), "lobby.yml"));
         enableGameConfig = new EnableGameConfig(new File(getDataFolder(), "enablegame.yml"));
 
-        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new FoodLevelChangeListener(), this);
+        getServer().getPluginManager().registerEvents(new InGameQuitListener(), this);
+        getServer().getPluginManager().registerEvents(new LobbyListener(), this);
+        getServer().getPluginManager().registerEvents(new SpecListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
         gameManager = new GameManager(this);
