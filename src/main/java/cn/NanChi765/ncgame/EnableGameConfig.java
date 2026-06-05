@@ -1,4 +1,4 @@
-package cn.NanChi765.ncgame;
+package cn.nanchi765.ncgame;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;

@@ -1,4 +1,4 @@
-package cn.NanChi765.ncgame;
+package cn.nanchi765.ncgame;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cn.NanChi765</groupId>
+    <groupId>cn.nanchi765</groupId>
     <artifactId>NCGame</artifactId>
     <version>2.1.5</version>
 
@@ -14,32 +14,33 @@
         <lib.dir>${project.basedir}/lib</lib.dir>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>codemc-repo</id>
+            <url>https://repo.codemc.org/repository/maven-public/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- 核心：Spigot API 1.12 -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.12-R0.1-SNAPSHOT</version>
-            <scope>system</scope>
-            <systemPath>${lib.dir}/spigot-api-1.12-R0.1-SNAPSHOT.jar</systemPath>
+            <version>1.12.2-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- 数据库连接池 -->
         <dependency>
             <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP-java7</artifactId>
-            <version>2.4.11</version>
-            <scope>system</scope>
-            <systemPath>${lib.dir}/HikariCP-java7-2.4.11.jar</systemPath>
-        </dependency>
-
-        <!-- Guava（Spigot 内部使用，但 system scope 需要显式声明） -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>18.0</version>
-            <scope>system</scope>
-            <systemPath>${lib.dir}/guava-18.0.jar</systemPath>
+            <artifactId>HikariCP</artifactId>
+            <version>7.0.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

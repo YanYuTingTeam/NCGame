@@ -1,4 +1,4 @@
-package cn.NanChi765.ncgame;
+package cn.nanchi765.ncgame;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -544,7 +544,7 @@ public class NCGame extends JavaPlugin implements Listener, CommandExecutor {
 
     private void showHelp(CommandSender sender) {
         sender.sendMessage(ChatColor.GOLD + "========== NCGame 小游戏派对 ==========");
-        sender.sendMessage(ChatColor.WHITE + "作者: " + ChatColor.AQUA + "NanChi765");
+        sender.sendMessage(ChatColor.WHITE + "作者: " + ChatColor.AQUA + "nanchi765");
         sender.sendMessage(ChatColor.WHITE + "版本: " + ChatColor.AQUA + getDescription().getVersion());
         sender.sendMessage(ChatColor.WHITE + "介绍: BungeeCord 大厅子服小游戏插件");
         sender.sendMessage(ChatColor.YELLOW + "指令帮助:");
