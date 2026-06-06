@@ -72,7 +72,6 @@ public class SnakeGame implements Listener, IMinigame {
 
         float speed = (float) Math.min(1.0, 0.2 * config.getTimer());
         for (Player p : gameManager.getAlivePlayers()) {
-            p.setGameMode(GameMode.SURVIVAL);
             p.setWalkSpeed(speed);
         }
 

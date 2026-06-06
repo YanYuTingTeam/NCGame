@@ -72,7 +72,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     @Override
     public void start() {
         for (Player p : gameManager.getAlivePlayers()) {
-            p.setGameMode(GameMode.SURVIVAL);
             p.setAllowFlight(true);
             p.setFlying(false);
             hasDoubleJumped.put(p.getUniqueId(), false);
