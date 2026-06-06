@@ -20,6 +20,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -330,11 +331,14 @@ public class ChefMGame implements Listener, IMinigame {
     }
 
     // 锁定第8格
-    // 锁了个底壳 如锁
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
-        if (event.getClickedInventory() == player.getInventory() && event.getSlot() == 8) {
+        if (event.getClickedInventory() == player.getInventory() && event.getSlot() == TASK_DISPLAY_SLOT) {
+            event.setCancelled(true);
+        }
+        if (event.getClick() == ClickType.NUMBER_KEY
+                && event.getHotbarButton() == TASK_DISPLAY_SLOT) {
             event.setCancelled(true);
         }
     }
