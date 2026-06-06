@@ -78,7 +78,6 @@ public class GameManager {
     public void addPlayer(Player player) {
         GameUtils.resetPlayer(player);
         players.add(player);
-        alivePlayers.add(player);
         playerScores.put(player.getUniqueId(), 0);
     }
 
