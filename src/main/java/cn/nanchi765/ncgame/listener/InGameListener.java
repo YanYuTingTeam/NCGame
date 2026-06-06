@@ -2,8 +2,10 @@ package cn.nanchi765.ncgame.listener;
 
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.GameConfig;
+import cn.nanchi765.ncgame.game.IMinigame;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -57,8 +59,14 @@ public class InGameListener implements Listener {
         Player player = event.getEntity();
         GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.PLAYING) return;
-        if (gameManager.getCurrentGame() == null) return;
-        gameManager.getCurrentGame().eliminatePlayer(player);
+        IMinigame currentGame = gameManager.getCurrentGame();
+        if (currentGame == null) return;
+        if (GameUtils.isAlive(player)) {
+            gameManager.getCurrentGame().eliminatePlayer(player);
+        } else {
+            player.setGameMode(GameMode.SPECTATOR);
+            player.teleport(currentGame.getConfig().getSpectatorSpawn());
+        }
     }
 
     @EventHandler
