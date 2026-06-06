@@ -92,12 +92,6 @@ public class GameManager {
         if (currentGame != null && GameUtils.isAlive(player)) {
             eliminatePlayer(player);
         }
-
-        // 游戏进行中且剩余玩家不足，提前结束
-        if (currentGame != null && alivePlayers.size() <= 1 && gamePlayingTask != null) {
-            gamePlayingTask.setCountdown(0);
-        }
-
     }
 
     /**

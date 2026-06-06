@@ -73,7 +73,6 @@ public class GamePrepareTask implements Runnable {
 
         task.cancel();
         gameManager.setGamePrepareTask(null);
-        minigame.start();
         gameManager.setGamePlayingTask(new GamePlayingTask(gameManager, minigame));
     }
 

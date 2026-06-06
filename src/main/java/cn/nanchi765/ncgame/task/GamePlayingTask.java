@@ -31,6 +31,7 @@ public class GamePlayingTask implements Runnable {
         this.countdown = gameManager.getCurrentGame().getConfig().getGameTime();
         this.task = Bukkit.getScheduler().runTaskTimer(NCGame.getInstance(), this, 0, 20L);
         gameManager.setCurrentStatus(Status.PLAYING);
+        minigame.start();
     }
 
     public int getTask() {
