@@ -3,7 +3,6 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.BombSheepConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -27,8 +26,8 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-import static cn.nanchi765.ncgame.utils.Utils.isAlive;
-import static cn.nanchi765.ncgame.utils.Utils.isGameActive;
+import static cn.nanchi765.ncgame.utils.GameUtils.isAlive;
+import static cn.nanchi765.ncgame.utils.GameUtils.isGameActive;
 
 public class BombSheepGame implements Listener, IMinigame {
 
@@ -381,15 +380,10 @@ public class BombSheepGame implements Listener, IMinigame {
      */
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(config.getSpectatorSpawn());
-
         String title = ChatColor.AQUA + player.getName() + " 被淘汰了";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
         }
+        gameManager.eliminatePlayer(player);
     }
 }

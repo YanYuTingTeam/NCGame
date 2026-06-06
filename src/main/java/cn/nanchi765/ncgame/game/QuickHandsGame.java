@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.QuickHandsConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -95,16 +95,7 @@ public class QuickHandsGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
+        gameManager.eliminatePlayer(player);
     }
 
     // ======================== 工具发放 ========================
@@ -236,8 +227,8 @@ public class QuickHandsGame implements Listener, IMinigame {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (!Utils.isGameActive(this)) return;
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isGameActive(this)) return;
+        if (!GameUtils.isAlive(player)) return;
         if (event.getFrom().getBlockX() == event.getTo().getBlockX()
                 && event.getFrom().getBlockY() == event.getTo().getBlockY()
                 && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
@@ -252,7 +243,7 @@ public class QuickHandsGame implements Listener, IMinigame {
         Player player = event.getPlayer();
 
         // 游戏未活跃或玩家非存活状态：一律取消
-        if (!Utils.isGameActive(this) || !Utils.isAlive(player)) {
+        if (!GameUtils.isGameActive(this) || !GameUtils.isAlive(player)) {
             event.setCancelled(true);
             return;
         }
@@ -267,7 +258,7 @@ public class QuickHandsGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (Utils.isGameActive(this) && event.getEntity() instanceof Player) {
+        if (GameUtils.isGameActive(this) && event.getEntity() instanceof Player) {
             event.setCancelled(true);
         }
     }

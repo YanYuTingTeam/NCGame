@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.OneHitKillConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -179,25 +179,11 @@ public class OneHitKillGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
-
         String title = ChatColor.AQUA + player.getName() + " 被一箭射杀";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
         }
-
-        if (alivePlayers.size() <= 1) {
-            gameManager.getGamePlayingTask().setCountdown(-1);
-        }
+        gameManager.eliminatePlayer(player);
     }
 
     // ======================== 事件监听 ========================
@@ -208,12 +194,12 @@ public class OneHitKillGame implements Listener, IMinigame {
 
         Player victim = (Player) event.getEntity();
 
-        if (!Utils.isGameActive(this)) {
+        if (!GameUtils.isGameActive(this)) {
             event.setCancelled(true);
             return;
         }
 
-        if (!Utils.isAlive(victim)) {
+        if (!GameUtils.isAlive(victim)) {
             event.setCancelled(true);
             return;
         }
@@ -222,7 +208,7 @@ public class OneHitKillGame implements Listener, IMinigame {
             Arrow arrow = (Arrow) event.getDamager();
             if (arrow.getShooter() instanceof Player) {
                 Player shooter = (Player) arrow.getShooter();
-                if (!shooter.equals(victim) && Utils.isAlive(shooter)) {
+                if (!shooter.equals(victim) && GameUtils.isAlive(shooter)) {
                     eliminatePlayer(victim);
                 }
             }
@@ -234,14 +220,14 @@ public class OneHitKillGame implements Listener, IMinigame {
 
     @EventHandler
     public void onFallDamage(EntityDamageEvent event) {
-        if (Utils.isGameActive(this) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+        if (GameUtils.isGameActive(this) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (Utils.isGameActive(this)) {
+        if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }

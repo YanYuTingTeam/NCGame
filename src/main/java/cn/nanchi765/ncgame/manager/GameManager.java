@@ -7,7 +7,7 @@ import cn.nanchi765.ncgame.task.GamePlayingTask;
 import cn.nanchi765.ncgame.task.GamePrepareTask;
 import cn.nanchi765.ncgame.task.GameStartingTask;
 import cn.nanchi765.ncgame.utils.LobbyUtils;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -17,57 +17,90 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.*;
+import java.util.function.BiFunction;
 
 public class GameManager {
 
+    // ==================== 游戏注册表（消除 switch-case）====================
+    private static final Map<String, BiFunction<NCGame, File, IMinigame>> GAME_FACTORIES = new LinkedHashMap<>();
+    static {
+        GAME_FACTORIES.put("掘一死战",   (p, d) -> new SnowSpleefGame(p, new SnowSpleefConfig(new File(d, "snowspleef.yml"))));
+        GAME_FACTORIES.put("眼疾手快",   (p, d) -> new QuickHandsGame(p, new QuickHandsConfig(new File(d, "quickhands.yml"))));
+        GAME_FACTORIES.put("极限雷区",   (p, d) -> new ExtremeMinefieldGame(p, new ExtremeMinefieldConfig(new File(d, "extrememinefield.yml"))));
+        GAME_FACTORIES.put("大扫除",     (p, d) -> new CleanupGame(p, new CleanupConfig(new File(d, "cleanup.yml"))));
+        GAME_FACTORIES.put("急速酷跑",   (p, d) -> new SpeedrunGame(p, new SpeedrunConfig(new File(d, "speedrun.yml"))));
+        GAME_FACTORIES.put("一箭必杀",   (p, d) -> new OneHitKillGame(p, new OneHitKillConfig(new File(d, "onehitkill.yml"))));
+        GAME_FACTORIES.put("厨神",       (p, d) -> new ChefMGame(p, new ChefMConfig(new File(d, "chefm.yml"))));
+        GAME_FACTORIES.put("炸弹羊",     (p, d) -> new BombSheepGame(p, new BombSheepConfig(new File(d, "bombsheep.yml"))));
+        GAME_FACTORIES.put("击退战",     (p, d) -> new KnockbackBattleGame(p, new KnockbackBattleConfig(new File(d, "knockbackbattle.yml"))));
+        GAME_FACTORIES.put("贪吃蛇",     (p, d) -> new SnakeGame(p, new SnakeConfig(new File(d, "snake.yml"))));
+        GAME_FACTORIES.put("信仰方块",   (p, d) -> new FaithBlockGame(p, new FaithBlockConfig(new File(d, "faithblock.yml"))));
+    }
+
+    // ==================== 字段 ====================
     @Getter
     public final Map<UUID, Integer> playerScores = new HashMap<>();
     private final NCGame plugin;
-    // 剩余游戏
-    @Getter
-    private final List<String> pendingGames = new ArrayList<>();
-    // 玩家
-    @Getter
-    private final List<Player> players = new ArrayList<>();
-    // 存活玩家
-    @Getter
-    private final List<Player> alivePlayers = new ArrayList<>();
-    @Getter
-    // 热加入玩家匹配
-    private final List<Player> lateJoinQueue = new ArrayList<>();
     private final File dataFolder;
-    @Getter
-    private IMinigame currentGame;
-    @Getter
-    @Setter
-    private Status currentStatus;
-    // 任务
-    @Getter
-    @Setter
-    private GameStartingTask gameStartingTask = null;
-    @Getter
-    @Setter
-    private GamePrepareTask gamePrepareTask = null;
-    @Getter
-    @Setter
-    private GamePlayingTask gamePlayingTask = null;
+    private final Set<String> gameWorldNames;
 
+    @Getter private final List<String> pendingGames = new ArrayList<>();
+    @Getter private final List<Player> players = new ArrayList<>();
+    @Getter private final List<Player> alivePlayers = new ArrayList<>();
+    @Getter private final List<Player> lateJoinQueue = new ArrayList<>();
+
+    @Getter private IMinigame currentGame;
+    @Getter @Setter private Status currentStatus;
+    @Getter @Setter private GameStartingTask gameStartingTask = null;
+    @Getter @Setter private GamePrepareTask gamePrepareTask = null;
+    @Getter @Setter private GamePlayingTask gamePlayingTask = null;
+
+    // ==================== 构造 ====================
     public GameManager(NCGame plugin) {
         this.plugin = plugin;
-        dataFolder = plugin.getDataFolder();
-        currentStatus = Status.WAITING;
+        this.dataFolder = plugin.getDataFolder();
+        this.currentStatus = Status.WAITING;
+
+        // 一次性收集所有游戏地图名，backup/reset 共用
+        this.gameWorldNames = Set.of(
+                new SnowSpleefConfig(new File(dataFolder, "snowspleef.yml")).getWorldName(),
+                new QuickHandsConfig(new File(dataFolder, "quickhands.yml")).getWorldName(),
+                new ExtremeMinefieldConfig(new File(dataFolder, "extrememinefield.yml")).getWorldName(),
+                new CleanupConfig(new File(dataFolder, "cleanup.yml")).getWorldName(),
+                new SpeedrunConfig(new File(dataFolder, "speedrun.yml")).getWorldName(),
+                new OneHitKillConfig(new File(dataFolder, "onehitkill.yml")).getWorldName(),
+                new ChefMConfig(new File(dataFolder, "chefm.yml")).getWorldName(),
+                new BombSheepConfig(new File(dataFolder, "bombsheep.yml")).getWorldName(),
+                new KnockbackBattleConfig(new File(dataFolder, "knockbackbattle.yml")).getWorldName(),
+                new SnakeConfig(new File(dataFolder, "snake.yml")).getWorldName(),
+                new FaithBlockConfig(new File(dataFolder, "faithblock.yml")).getWorldName()
+        );
     }
 
+    // ==================== 玩家管理 ====================
     public void addPlayer(Player player) {
-        Utils.resetPlayer(player);
+        GameUtils.resetPlayer(player);
         players.add(player);
         alivePlayers.add(player);
     }
 
     public void removePlayer(Player player) {
-        Utils.resetPlayer(player);
+        GameUtils.resetPlayer(player);
         players.remove(player);
         alivePlayers.remove(player);
+    }
+
+    public boolean eliminatePlayer(Player player) {
+        if (!alivePlayers.remove(player)) return false;
+
+        GameUtils.resetPlayer(player);
+        player.setGameMode(GameMode.SPECTATOR);
+        player.teleport(currentGame.getConfig().getSpectatorSpawn());
+
+        if (alivePlayers.size() <= 1) {
+            gamePlayingTask.setCountdown(0);
+        }
+        return true;
     }
 
     public void addLatePlayer(Player player) {
@@ -76,88 +109,46 @@ public class GameManager {
         lateJoinQueue.add(player);
     }
 
+    // ==================== 游戏流程 ====================
     public void startNextGame() {
         if (pendingGames.isEmpty()) return;
         String nextGame = pendingGames.remove(0);
 
+        // 先合并迟到玩家，再统一重建存活列表
         players.addAll(lateJoinQueue);
-        alivePlayers.addAll(players);
         lateJoinQueue.clear();
+        alivePlayers.clear();
+        alivePlayers.addAll(players);
 
-        if (players.size() < plugin.getLobbyConfig().getRequiredPlayers()) {
-            Bukkit.broadcastMessage(ChatColor.RED + "人数不足，本轮游戏取消，返回大厅...");
-            pendingGames.clear();
-            onMinigameEnd();
-            for (Player player : players) {
-                LobbyUtils.teleportToLobby(player);
-            }
+        if (GameUtils.cancelIfNotEnoughPlayers()) {
             return;
         }
 
-        switch (nextGame) {
-            case "掘一死战":
-                SnowSpleefConfig spleefConfig = new SnowSpleefConfig(new File(dataFolder, "snowspleef.yml"));
-                currentGame = new SnowSpleefGame(plugin, spleefConfig);
-                break;
-            case "眼疾手快":
-                QuickHandsConfig qhConfig = new QuickHandsConfig(new File(dataFolder, "quickhands.yml"));
-                currentGame = new QuickHandsGame(plugin, qhConfig);
-                break;
-            case "极限雷区":
-                ExtremeMinefieldConfig emConfig = new ExtremeMinefieldConfig(new File(dataFolder, "extrememinefield.yml"));
-                currentGame = new ExtremeMinefieldGame(plugin, emConfig);
-                break;
-            case "大扫除":
-                CleanupConfig cConfig = new CleanupConfig(new File(dataFolder, "cleanup.yml"));
-                currentGame = new CleanupGame(plugin, cConfig);
-                break;
-            case "急速酷跑":
-                SpeedrunConfig spConfig = new SpeedrunConfig(new File(dataFolder, "speedrun.yml"));
-                currentGame = new SpeedrunGame(plugin, spConfig);
-                break;
-            case "一箭必杀":
-                OneHitKillConfig ohkConfig = new OneHitKillConfig(new File(dataFolder, "onehitkill.yml"));
-                currentGame = new OneHitKillGame(plugin, ohkConfig);
-                break;
-            case "厨神":
-                ChefMConfig chefConfig = new ChefMConfig(new File(dataFolder, "chefm.yml"));
-                currentGame = new ChefMGame(plugin, chefConfig);
-                break;
-            case "炸弹羊":
-                BombSheepConfig bsConfig = new BombSheepConfig(new File(dataFolder, "bombsheep.yml"));
-                currentGame = new BombSheepGame(plugin, bsConfig);
-                break;
-            case "击退战":
-                KnockbackBattleConfig kbConfig = new KnockbackBattleConfig(new File(dataFolder, "knockbackbattle.yml"));
-                currentGame = new KnockbackBattleGame(plugin, kbConfig);
-                break;
-            case "贪吃蛇":
-                SnakeConfig snakeConfig = new SnakeConfig(new File(dataFolder, "snake.yml"));
-                currentGame = new SnakeGame(plugin, snakeConfig);
-                break;
-            case "信仰方块":
-                FaithBlockConfig fbConfig = new FaithBlockConfig(new File(dataFolder, "faithblock.yml"));
-                currentGame = new FaithBlockGame(plugin, fbConfig);
-                break;
-            default:
-                Bukkit.broadcastMessage(ChatColor.RED + "未知游戏: " + nextGame);
-                startNextGame();
-                return;
+        BiFunction<NCGame, File, IMinigame> factory = GAME_FACTORIES.get(nextGame);
+        if (factory == null) {
+            Bukkit.broadcastMessage(ChatColor.RED + "未知游戏: " + nextGame);
+            startNextGame();
+            return;
         }
+        currentGame = factory.apply(plugin, dataFolder);
+
         if (gamePrepareTask == null) {
             this.setGamePrepareTask(new GamePrepareTask(this, currentGame));
         }
     }
 
     public void onMinigameEnd() {
-        System.out.println(currentGame.toString() + " 结束");
-        if (getGamePlayingTask() != null) {
-            this.getGamePlayingTask().cancel();
-            this.setGamePlayingTask(null);
+        Bukkit.getLogger().info(currentGame + " 结束");
+
+        if (gamePlayingTask != null) {
+            gamePlayingTask.cancel();
+            gamePlayingTask = null;
             return;
         }
+
         currentGame = null;
         currentStatus = Status.ENDED;
+
         if (pendingGames.isEmpty()) {
             broadcastRanking();
             resetAllGameWorlds();
@@ -165,14 +156,12 @@ public class GameManager {
                 LobbyUtils.teleportToLobby(player);
             }
             currentStatus = Status.WAITING;
-            // 达到人数 开始倒计时
-            if (this.getGameStartingTask() == null && this.getPlayers().size() >= NCGame.getInstance().getLobbyConfig().getMinPlayers()) {
-                this.setGameStartingTask(new GameStartingTask(this));
+            if (gameStartingTask == null
+                    && players.size() >= NCGame.getInstance().getLobbyConfig().getMinPlayers()) {
+                gameStartingTask = new GameStartingTask(this);
             }
-        } else {
-            if (gamePrepareTask == null) {
-                startNextGame();
-            }
+        } else if (gamePrepareTask == null) {
+            startNextGame();
         }
     }
 
@@ -181,53 +170,36 @@ public class GameManager {
             Bukkit.broadcastMessage(ChatColor.GOLD + "本轮无积分记录。");
             return;
         }
+
         List<Map.Entry<UUID, Integer>> sorted = new ArrayList<>(playerScores.entrySet());
         sorted.sort(Map.Entry.<UUID, Integer>comparingByValue().reversed());
 
         Bukkit.broadcastMessage(ChatColor.GOLD + "========== 总积分排行榜 ==========");
         int rank = 1;
-        int count = 0;
         for (Map.Entry<UUID, Integer> entry : sorted) {
-            if (count >= 5) break;
+            if (rank > 5) break;
             Player player = Bukkit.getPlayer(entry.getKey());
             if (player != null) {
-                Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + rank + "名：" + ChatColor.WHITE + player.getName() + " - " + entry.getValue() + "分");
+                Bukkit.broadcastMessage(
+                        ChatColor.YELLOW + "第" + rank + "名："
+                                + ChatColor.WHITE + player.getName()
+                                + " - " + entry.getValue() + "分"
+                );
             }
             rank++;
-            count++;
         }
     }
 
     private void backupAllGameWorlds() {
-        Set<String> worlds = new HashSet<>();
-        worlds.add(new SnowSpleefConfig(new File(dataFolder, "snowspleef.yml")).getWorldName());
-        worlds.add(new QuickHandsConfig(new File(dataFolder, "quickhands.yml")).getWorldName());
-        worlds.add(new ExtremeMinefieldConfig(new File(dataFolder, "extrememinefield.yml")).getWorldName());
-        worlds.add(new CleanupConfig(new File(dataFolder, "cleanup.yml")).getWorldName());
-        worlds.add(new SpeedrunConfig(new File(dataFolder, "speedrun.yml")).getWorldName());
-        worlds.add(new OneHitKillConfig(new File(dataFolder, "onehitkill.yml")).getWorldName());
-        worlds.add(new ChefMConfig(new File(dataFolder, "chefm.yml")).getWorldName());
-        worlds.add(new BombSheepConfig(new File(dataFolder, "bombsheep.yml")).getWorldName());
-        worlds.add(new KnockbackBattleConfig(new File(dataFolder, "knockbackbattle.yml")).getWorldName());
-        worlds.add(new SnakeConfig(new File(dataFolder, "snake.yml")).getWorldName());
-        worlds.add(new FaithBlockConfig(new File(dataFolder, "faithblock.yml")).getWorldName());
-        for (String world : worlds) NCGame.getInstance().getWorldResetManager().backupWorld(world);
+        for (String world : gameWorldNames) {
+            NCGame.getInstance().getWorldResetManager().backupWorld(world);
+        }
     }
 
     private void resetAllGameWorlds() {
-        Set<String> worlds = new HashSet<>();
-        worlds.add(new SnowSpleefConfig(new File(dataFolder, "snowspleef.yml")).getWorldName());
-        worlds.add(new QuickHandsConfig(new File(dataFolder, "quickhands.yml")).getWorldName());
-        worlds.add(new ExtremeMinefieldConfig(new File(dataFolder, "extrememinefield.yml")).getWorldName());
-        worlds.add(new CleanupConfig(new File(dataFolder, "cleanup.yml")).getWorldName());
-        worlds.add(new SpeedrunConfig(new File(dataFolder, "speedrun.yml")).getWorldName());
-        worlds.add(new OneHitKillConfig(new File(dataFolder, "onehitkill.yml")).getWorldName());
-        worlds.add(new ChefMConfig(new File(dataFolder, "chefm.yml")).getWorldName());
-        worlds.add(new BombSheepConfig(new File(dataFolder, "bombsheep.yml")).getWorldName());
-        worlds.add(new KnockbackBattleConfig(new File(dataFolder, "knockbackbattle.yml")).getWorldName());
-        worlds.add(new SnakeConfig(new File(dataFolder, "snake.yml")).getWorldName());
-        worlds.add(new FaithBlockConfig(new File(dataFolder, "faithblock.yml")).getWorldName());
-        for (String world : worlds) NCGame.getInstance().getWorldResetManager().resetWorld(world);
+        for (String world : gameWorldNames) {
+            NCGame.getInstance().getWorldResetManager().resetWorld(world);
+        }
         Bukkit.getScheduler().runTaskLater(NCGame.getInstance(), this::backupAllGameWorlds, 100L);
     }
 }

@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.FaithBlockConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -78,7 +78,7 @@ public class FaithBlockGame implements Listener, IMinigame {
         changeTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (Utils.isGameActive(FaithBlockGame.this)) {
+                if (GameUtils.isGameActive(FaithBlockGame.this)) {
                     doRandomColorChange();
                 }
             }
@@ -263,7 +263,7 @@ public class FaithBlockGame implements Listener, IMinigame {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
 
         Player player = event.getPlayer();
         if (player.getLocation().getY() < config.getDeathY()) {
@@ -273,43 +273,29 @@ public class FaithBlockGame implements Listener, IMinigame {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         event.setCancelled(true);
     }
 
     // ========== 淘汰逻辑 ==========
 
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
-
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", ChatColor.AQUA + player.getName() + " 被淘汰了", 0, 40, 10);
         }
-
-        if (alivePlayers.size() <= 1) {
-            gameManager.getGamePlayingTask().setCountdown(0);
-        }
+        gameManager.eliminatePlayer(player);
     }
 
     // ========== 工具方法 ==========

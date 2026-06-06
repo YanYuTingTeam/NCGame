@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.SnakeConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -80,7 +80,7 @@ public class SnakeGame implements Listener, IMinigame {
         vanishTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!Utils.isGameActive(SnakeGame.this)) {
+                if (!GameUtils.isGameActive(SnakeGame.this)) {
                     cancel();
                     return;
                 }
@@ -119,25 +119,12 @@ public class SnakeGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
-
         String title = ChatColor.AQUA + player.getName() + " 掉下去了";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
         }
 
-        if (alivePlayers.isEmpty()) {
-            end();
-        }
+        gameManager.eliminatePlayer(player);
     }
 
     // ======================== 屏障放置 ========================
@@ -245,10 +232,10 @@ public class SnakeGame implements Listener, IMinigame {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
 
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
 
         if (player.getLocation().getY() < deathY) {
             eliminatePlayer(player);
@@ -257,12 +244,12 @@ public class SnakeGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         if (!(event.getEntity() instanceof Player)) return;
 
         if (event.getCause() == EntityDamageEvent.DamageCause.VOID) {
             Player player = (Player) event.getEntity();
-            if (Utils.isAlive(player)) {
+            if (GameUtils.isAlive(player)) {
                 eliminatePlayer(player);
             }
         }
@@ -271,14 +258,14 @@ public class SnakeGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamageByEntity(EntityDamageByEntityEvent event) {
-        if (Utils.isGameActive(this)) {
+        if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (Utils.isGameActive(this)) {
+        if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }

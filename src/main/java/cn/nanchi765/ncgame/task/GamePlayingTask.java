@@ -5,7 +5,6 @@ import cn.nanchi765.ncgame.config.GameConfig;
 import cn.nanchi765.ncgame.game.IMinigame;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
-import cn.nanchi765.ncgame.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;

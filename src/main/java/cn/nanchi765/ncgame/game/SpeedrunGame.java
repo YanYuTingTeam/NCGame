@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.SpeedrunConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -102,15 +102,7 @@ public class SpeedrunGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        player.setGameMode(GameMode.SPECTATOR);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
+        gameManager.eliminatePlayer(player);
     }
 
     private Map<Player, Integer> buildRankings() {
@@ -200,7 +192,7 @@ public class SpeedrunGame implements Listener, IMinigame {
         Player player = event.getPlayer();
 
         // 准备阶段：锁定玩家在出生点（仅检查方块级位移，忽略头部转动）
-        if (!Utils.isGameActive(this)) {
+        if (!GameUtils.isGameActive(this)) {
             Location spawn = spawnPoints.get(player);
             if (spawn != null && hasMovedBlock(event)) {
                 player.teleport(spawn);
@@ -208,7 +200,7 @@ public class SpeedrunGame implements Listener, IMinigame {
             return;
         }
 
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
 
         // 掉落回溯
         if (player.getLocation().getY() < 0) {
@@ -226,12 +218,12 @@ public class SpeedrunGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         if (!(event.getEntity() instanceof Player)) return;
 
         if (event.getCause() == EntityDamageEvent.DamageCause.VOID) {
             Player player = (Player) event.getEntity();
-            if (Utils.isAlive(player)) {
+            if (GameUtils.isAlive(player)) {
                 Location spawn = spawnPoints.get(player);
                 if (spawn != null) {
                     player.teleport(spawn);

@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.SnowSpleefConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -91,24 +91,11 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        player.setGameMode(GameMode.SPECTATOR);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
-
         String title = ChatColor.AQUA + player.getName() + " 在岩浆里游泳";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
         }
-
-        if (alivePlayers.size() <= 1) {
-            gameManager.getGamePlayingTask().setCountdown(0);
-        }
+        gameManager.eliminatePlayer(player);
     }
 
     // ======================== 工具 ========================
@@ -202,7 +189,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-        if (!Utils.isGameActive(this) || !Utils.isAlive(player)) {
+        if (!GameUtils.isGameActive(this) || !GameUtils.isAlive(player)) {
             event.setCancelled(true);
             return;
         }
@@ -220,14 +207,14 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         if (!(event.getEntity() instanceof Snowball)) return;
 
         Snowball snowball = (Snowball) event.getEntity();
         if (!(snowball.getShooter() instanceof Player)) return;
 
         Player shooter = (Player) snowball.getShooter();
-        if (!Utils.isAlive(shooter)) return;
+        if (!GameUtils.isAlive(shooter)) return;
 
         if (event.getHitBlock() != null) {
             Material type = event.getHitBlock().getType();
@@ -239,10 +226,10 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
 
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
 
         if (player.getLocation().getY() < config.getDeathY()) {
             eliminatePlayer(player);
@@ -251,14 +238,14 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamageByEntity(EntityDamageByEntityEvent event) {
-        if (Utils.isGameActive(this)) {
+        if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         if (!(event.getEntity() instanceof Player)) return;
         event.setCancelled(true);
     }

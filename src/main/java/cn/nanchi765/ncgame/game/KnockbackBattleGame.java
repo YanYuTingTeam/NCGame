@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.KnockbackBattleConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -178,7 +178,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
             p.setFlying(false);
             p.getInventory().clear();
             if (gameManager.getAlivePlayers().contains(p)) {
-                Utils.resetPlayer(p);
+                GameUtils.resetPlayer(p);
             }
         }
         lastDoubleJumpTimes.clear();
@@ -189,10 +189,10 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
 
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
 
         // 掉落淘汰
         if (player.getLocation().getY() < config.getDeathY()) {
@@ -213,8 +213,8 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     @EventHandler
     public void onToggleFlight(PlayerToggleFlightEvent event) {
         Player player = event.getPlayer();
-        if (!Utils.isGameActive(this)) return;
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isGameActive(this)) return;
+        if (!GameUtils.isAlive(player)) return;
 
         GameMode mode = player.getGameMode();
         if (mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR) return;
@@ -256,7 +256,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     public void onDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
 
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
 
         Player victim = (Player) event.getEntity();
         Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
@@ -273,11 +273,11 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @EventHandler(ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         if (!(event.getEntity() instanceof Player)) return;
 
         Player player = (Player) event.getEntity();
-        if (Utils.isAlive(player) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+        if (GameUtils.isAlive(player) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
             event.setCancelled(true);
         }
     }
@@ -301,26 +301,9 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.setAllowFlight(false);
-        player.setFlying(false);
-
-        Location spectatorSpawn = config.getSpectatorSpawn();
-        if (spectatorSpawn != null) {
-            player.teleport(spectatorSpawn);
-        }
-
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", ChatColor.AQUA + player.getName() + " 被击落了", 0, 40, 10);
         }
-
-        // 剩余1人或0人时自动结束
-        if (alivePlayers.size() <= 1) {
-            gameManager.getGamePlayingTask().setCountdown(0);
-        }
+        gameManager.eliminatePlayer(player);
     }
 }

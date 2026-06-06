@@ -3,7 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.CleanupConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -11,7 +11,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -131,12 +130,12 @@ public class CleanupGame implements Listener, IMinigame {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!Utils.isGameActive(this)) {
+        if (!GameUtils.isGameActive(this)) {
             event.setCancelled(true);
             return;
         }
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) {
+        if (!GameUtils.isAlive(player)) {
             event.setCancelled(true);
             return;
         }
@@ -166,7 +165,7 @@ public class CleanupGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (Utils.isGameActive(this)) {
+        if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }
@@ -176,10 +175,6 @@ public class CleanupGame implements Listener, IMinigame {
      */
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(config.getSpectatorSpawn());
+        gameManager.eliminatePlayer(player);
     }
 }

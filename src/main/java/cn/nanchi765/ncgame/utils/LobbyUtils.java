@@ -27,7 +27,7 @@ public class LobbyUtils {
         LobbyConfig lobbyConfig = NCGame.getInstance().getLobbyConfig();
         Location loc = lobbyConfig.getLocation();
         player.teleport(loc);
-        Utils.resetPlayer(player);
+        GameUtils.resetPlayer(player);
         player.getInventory().setItem(7, createGuideBook());
         player.getInventory().setItem(lobbyConfig.getReturnSlot(), lobbyConfig.createReturnItem());
     }

@@ -3,8 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.ChefMConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.manager.Status;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -31,7 +30,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-import static cn.nanchi765.ncgame.utils.Utils.isGameActive;
+import static cn.nanchi765.ncgame.utils.GameUtils.isGameActive;
 
 public class ChefMGame implements Listener, IMinigame {
 
@@ -164,7 +163,7 @@ public class ChefMGame implements Listener, IMinigame {
         BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
-                if (gameManager.getCurrentStatus() != Status.PLAYING) {
+                if (isGameActive(ChefMGame.this)) {
                     this.cancel();
                     return;
                 }
@@ -306,7 +305,7 @@ public class ChefMGame implements Listener, IMinigame {
         // 游戏中：仅存活玩家可造成伤害（允许攻击动物）
         if (event.getDamager() instanceof Player) {
             Player player = (Player) event.getDamager();
-            event.setCancelled(!Utils.isAlive(player));
+            event.setCancelled(!GameUtils.isAlive(player));
             return;
         }
 
@@ -320,6 +319,7 @@ public class ChefMGame implements Listener, IMinigame {
         event.setCancelled(true);
     }
 
+    // 锁定第8格
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
@@ -375,7 +375,7 @@ public class ChefMGame implements Listener, IMinigame {
         if (!isGameActive(this)) return;
 
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
         if (!(event.getRightClicked() instanceof Villager)) return;
 
         event.setCancelled(true);
@@ -428,11 +428,7 @@ public class ChefMGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(config.getSpectatorSpawn());
+        gameManager.eliminatePlayer(player);
     }
 
     private int countMaterialInInventory(Player player, Material material) {

@@ -4,7 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.ExtremeMinefieldConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
-import cn.nanchi765.ncgame.utils.Utils;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -119,7 +119,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
 
         // 准备阶段锁定
         if (gameManager.getCurrentStatus() == Status.PREPARE) {
@@ -150,7 +150,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                     p.sendTitle("", msg, 10, 70, 10);
                 }
                 if (finishedPlayers.size() == alivePlayers.size()) {
-                    end();
+                    gameManager.getGamePlayingTask().setCountdown(-1);
                 }
             }
         }
@@ -160,10 +160,10 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     @EventHandler
     public void onPressurePlate(PlayerInteractEvent event) {
-        if (!Utils.isGameActive(this)) return;
+        if (!GameUtils.isGameActive(this)) return;
         if (event.getAction() != Action.PHYSICAL) return;
         Player player = event.getPlayer();
-        if (!Utils.isAlive(player)) return;
+        if (!GameUtils.isAlive(player)) return;
         if (finishedPlayers.contains(player)) return;
 
         Material type = event.getClickedBlock().getType();
@@ -199,17 +199,13 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
-        if (Utils.isGameActive(this)) {
+        if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
     }
 
     @Override
     public void eliminatePlayer(Player player) {
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-        if (!alivePlayers.remove(player)) return;
-        Utils.resetPlayer(player);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.teleport(config.getSpectatorSpawn());
+        gameManager.eliminatePlayer(player);
     }
 }
