@@ -29,7 +29,27 @@ public class Command implements CommandExecutor {
                     sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");
                     return true;
                 }
-                gameManager.getGamePlayingTask().setCountdown(Integer.parseInt(args[1]));
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "用法: /ncgame setcountdown <秒数>");
+                    return true;
+                }
+                int seconds;
+                try {
+                    seconds = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(ChatColor.RED + "无效数字: " + args[1]);
+                    return true;
+                }
+
+                if (gameManager.getGameStartingTask() != null) {
+                    gameManager.getGameStartingTask().setCountdown(seconds);
+                } else if (gameManager.getGamePrepareTask() != null) {
+                    gameManager.getGamePrepareTask().setCountdown(seconds);
+                } else if (gameManager.getGamePlayingTask() != null) {
+                    gameManager.getGamePlayingTask().setCountdown(seconds);
+                } else {
+                    sender.sendMessage(ChatColor.RED + "当前没有正在运行的任务。");
+                }
                 break;
             case "reload":
                 if (!sender.hasPermission("ncgame.admin")) {
