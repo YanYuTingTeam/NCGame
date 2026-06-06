@@ -12,6 +12,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -48,7 +49,7 @@ public class CleanupGame implements Listener, IMinigame {
         ItemStack axe = createItem(config.getAxeMaterial(), config.getAxeName());
         ItemStack shovel = createItem(config.getShovelMaterial(), config.getShovelName());
 
-        for (Player p : gameManager.getPlayers()) {
+        for (Player p : gameManager.getAlivePlayers()) {
             p.teleport(spawn);
             p.getInventory().setItem(0, shears);
             p.getInventory().setItem(1, axe);
@@ -68,7 +69,7 @@ public class CleanupGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-        for (Player player : gameManager.getPlayers()) {
+        for (Player player : gameManager.getAlivePlayers()) {
             player.setGameMode(GameMode.SURVIVAL);
         }
     }
@@ -124,8 +125,6 @@ public class CleanupGame implements Listener, IMinigame {
         }
 
         HandlerList.unregisterAll(this);
-
-        
     }
 
     @EventHandler
@@ -168,6 +167,14 @@ public class CleanupGame implements Listener, IMinigame {
         if (GameUtils.isGameActive(this)) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void onMove(PlayerMoveEvent event) {
+        if (event.getTo().getY() < 0) {
+            plugin.
+        }
+
     }
 
     /**

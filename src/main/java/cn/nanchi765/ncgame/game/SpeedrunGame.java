@@ -80,7 +80,7 @@ public class SpeedrunGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-        for (Player p : gameManager.getPlayers()) {
+        for (Player p : gameManager.getAlivePlayers()) {
             p.setGameMode(GameMode.SURVIVAL);
         }
     }

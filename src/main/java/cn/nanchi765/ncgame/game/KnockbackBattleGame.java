@@ -61,7 +61,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
         // 发放击退棒
         ItemStack stick = createKnockbackStick();
-        for (Player p : gameManager.getPlayers()) {
+        for (Player p : gameManager.getAlivePlayers()) {
             p.getInventory().clear();
             p.getInventory().setItem(0, stick);
         }
