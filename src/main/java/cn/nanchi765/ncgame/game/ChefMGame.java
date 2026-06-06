@@ -25,6 +25,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -58,7 +59,7 @@ public class ChefMGame implements Listener, IMinigame {
     private final List<ChefMConfig.ChestConfig> chestConfigs;
     private final Map<Player, Integer> scores = new HashMap<>();
     private final Map<Player, Integer> taskIndex = new HashMap<>();
-    private final Map<Location, BukkitTask> chestTasks = new HashMap<>();
+    //private final Map<Location, BukkitTask> chestTasks = new HashMap<>();
     private final Map<Location, Player> furnaceUsers = new HashMap<>();
     private final Map<Location, ChefMConfig.ChestConfig> chestConfigMap = new HashMap<>();
     private final Map<Location, ItemStack[]> chestSnapshots = new HashMap<>();
@@ -111,8 +112,8 @@ public class ChefMGame implements Listener, IMinigame {
 
     @Override
     public void end() {
-        chestTasks.values().forEach(BukkitTask::cancel);
-        chestTasks.clear();
+        //chestTasks.values().forEach(BukkitTask::cancel);
+        //chestTasks.clear();
         furnaceUsers.clear();
         chestConfigMap.clear();
         chestSnapshots.clear();
@@ -166,29 +167,29 @@ public class ChefMGame implements Listener, IMinigame {
             chest.update();
             chestConfigMap.put(loc, cc);
             refillChest(cc, chest.getBlockInventory());
-            startChestRefillTask(cc, loc);
+            //startChestRefillTask(cc, loc);
         }
     }
 
-    private void startChestRefillTask(ChefMConfig.ChestConfig cc, Location loc) {
-        BukkitTask task = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (isGameActive(ChefMGame.this)) {
-                    this.cancel();
-                    return;
-                }
-                Block b = loc.getBlock();
-                if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
-                    Chest c = (Chest) b.getState();
-                    if (isInventoryEmpty(c.getBlockInventory())) {
-                        refillChest(cc, c.getBlockInventory());
-                    }
-                }
-            }
-        }.runTaskTimer(plugin, 0, cc.refillDelay);
-        chestTasks.put(loc, task);
-    }
+    //private void startChestRefillTask(ChefMConfig.ChestConfig cc, Location loc) {
+    //    BukkitTask task = new BukkitRunnable() {
+    //        @Override
+    //        public void run() {
+    //            if (isGameActive(ChefMGame.this)) {
+    //                this.cancel();
+    //                return;
+    //            }
+    //            Block b = loc.getBlock();
+    //            if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
+    //                Chest c = (Chest) b.getState();
+    //                if (isInventoryEmpty(c.getBlockInventory())) {
+    //                    refillChest(cc, c.getBlockInventory());
+    //                }
+    //            }
+    //        }
+    //    }.runTaskTimer(plugin, 0, cc.refillDelay);
+    //    chestTasks.put(loc, task);
+    //}
 
     private void giveChefSword(Player p) {
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
@@ -403,9 +404,21 @@ public class ChefMGame implements Listener, IMinigame {
             ChefMConfig.ChestConfig cc = chestConfigMap.get(loc);
             if (cc != null) {
                 ItemStack[] snapshot = chestSnapshots.remove(loc);
-                if (snapshot != null && !contentsEqual(snapshot, inv.getContents())) refillChest(cc, inv);
+                if (snapshot != null && !contentsEqual(snapshot, inv.getContents())) {
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (!isGameActive(ChefMGame.this)) return;
+                            Block b = loc.getBlock();
+                            if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
+                                Chest c = (Chest) b.getState();
+                                refillChest(cc, c.getBlockInventory());}
+                        }
+                    }.runTaskLater(plugin, cc.refillDelay);
+                }
             }
         }
+
     }
 
     private boolean contentsEqual(ItemStack[] a, ItemStack[] b) {
@@ -417,6 +430,17 @@ public class ChefMGame implements Listener, IMinigame {
             if (ai == null || bi == null) return false;
             if (ai.getType() != bi.getType() || ai.getAmount() != bi.getAmount()) return false;
         }return true;
+    }
+
+    @EventHandler
+    public void onPlayerDropItem(PlayerDropItemEvent event) {
+        if (!isGameActive(this)) return;
+        ItemStack dropped = event.getItemDrop().getItemStack();
+        if (dropped.hasItemMeta() && dropped.getItemMeta().hasEnchant(Enchantment.DURABILITY)) {
+            Player player = event.getPlayer();
+            ItemStack taskItem = player.getInventory().getItem(TASK_DISPLAY_SLOT);
+            if (taskItem != null && taskItem.isSimilar(dropped)) event.setCancelled(true);
+        }
     }
 
 
