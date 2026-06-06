@@ -80,15 +80,6 @@ public class LobbyListener implements Listener {
         }
     }
 
-//        if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR ||
-//                event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
-//            ItemStack item = event.getItem();
-//            if (item != null && item == lobbyConfig.getLobbyItem()) {
-//                event.setCancelled(true);
-//                LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
-//            }
-//        }
-
     @EventHandler
     public void onPlayerInventoryClick(InventoryClickEvent event) {
         if (gameManager.getCurrentStatus() != Status.WAITING) return;

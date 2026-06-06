@@ -14,6 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 
 public class InGameListener implements Listener {
 
@@ -61,9 +62,23 @@ public class InGameListener implements Listener {
         if (gameManager.getCurrentStatus() != Status.PLAYING) return;
         IMinigame currentGame = gameManager.getCurrentGame();
         if (currentGame == null) return;
+        player.spigot().respawn();
         if (GameUtils.isAlive(player)) {
             gameManager.getCurrentGame().eliminatePlayer(player);
         } else {
+            player.setGameMode(GameMode.SPECTATOR);
+            player.teleport(currentGame.getConfig().getSpectatorSpawn());
+        }
+    }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        GameManager gameManager = NCGame.getInstance().getGameManager();
+        if (gameManager.getCurrentStatus() != Status.PLAYING) return;
+        IMinigame currentGame = gameManager.getCurrentGame();
+        if (currentGame == null) return;
+        if (!GameUtils.isAlive(player)) {
             player.setGameMode(GameMode.SPECTATOR);
             player.teleport(currentGame.getConfig().getSpectatorSpawn());
         }

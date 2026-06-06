@@ -24,6 +24,8 @@ public class GameUtils {
         player.setFoodLevel(20);
         player.setSaturation(10);
         player.setWalkSpeed(0.2f);
+        player.setLevel(0);
+        player.setExp(0);
 
         player.setFlying(false);
         player.setAllowFlight(false);
