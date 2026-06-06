@@ -63,6 +63,7 @@ public class FaithBlockGame implements Listener, IMinigame {
         }
         for (Player p : gameManager.getAlivePlayers()) {
             p.teleport(spawn);
+            p.setGameMode(GameMode.SURVIVAL);
         }
 
         cacheRegionBounds();
