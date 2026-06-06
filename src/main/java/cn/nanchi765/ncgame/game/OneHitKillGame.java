@@ -64,7 +64,6 @@ public class OneHitKillGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-
         for (Player p : gameManager.getPlayers()) {
             p.setGameMode(GameMode.SURVIVAL);
         }
@@ -80,8 +79,6 @@ public class OneHitKillGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
-
-        
     }
 
     // ======================== 准备阶段辅助 ========================

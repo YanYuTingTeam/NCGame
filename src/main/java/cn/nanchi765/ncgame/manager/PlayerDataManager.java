@@ -2,6 +2,7 @@ package cn.nanchi765.ncgame.manager;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.Getter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -24,6 +25,8 @@ public class PlayerDataManager {
     private File dataFile;
     private FileConfiguration dataConfig;
     private HikariDataSource hikari;
+    @Getter
+    private Map<UUID, Integer> playerScores = new HashMap<>();
 
     public PlayerDataManager(JavaPlugin plugin) {
         this.plugin = plugin;

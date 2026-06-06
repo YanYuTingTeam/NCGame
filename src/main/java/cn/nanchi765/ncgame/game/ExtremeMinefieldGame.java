@@ -150,7 +150,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                     p.sendTitle("", msg, 10, 70, 10);
                 }
                 if (finishedPlayers.size() == alivePlayers.size()) {
-                    gameManager.getGamePlayingTask().setCountdown(-1);
+                    gameManager.getGamePlayingTask().setCountdown(0);
                 }
             }
         }

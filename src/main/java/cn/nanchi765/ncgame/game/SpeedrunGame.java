@@ -183,7 +183,7 @@ public class SpeedrunGame implements Listener, IMinigame {
         }
 
         if (finishedSet.size() == gameManager.getAlivePlayers().size()) {
-            end();
+            gameManager.getGamePlayingTask().setCountdown(0);
         }
     }
 

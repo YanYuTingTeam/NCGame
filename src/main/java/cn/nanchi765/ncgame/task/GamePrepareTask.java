@@ -51,7 +51,7 @@ public class GamePrepareTask implements Runnable {
 
     @Override
     public void run() {
-        if (!GameUtils.cancelIfNotEnoughPlayers()) {
+        if (GameUtils.cancelIfNotEnoughPlayers()) {
             this.cancel();
             return;
         }

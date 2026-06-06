@@ -31,14 +31,14 @@ public class GameUtils {
 
     public static boolean isGameActive(IMinigame minigame) {
         GameManager gameManager = NCGame.getInstance().getGameManager();
-        return gameManager.getCurrentStatus() == Status.PLAYING && gameManager.getCurrentGame() == minigame;
+        return gameManager.getCurrentGame() == minigame && gameManager.getCurrentStatus() == Status.PLAYING;
     }
 
     public static boolean cancelIfNotEnoughPlayers() {
         GameManager gm = NCGame.getInstance().getGameManager();
         LobbyConfig cfg = NCGame.getInstance().getLobbyConfig();
 
-        if (gm.getPlayers().size() >= cfg.getRequiredPlayers()) {
+        if (gm.getPlayers().size() >= cfg.getMinPlayers()) {
             return false;
         }
 

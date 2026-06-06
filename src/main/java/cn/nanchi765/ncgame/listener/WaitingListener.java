@@ -8,7 +8,10 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
 
 public class WaitingListener implements Listener {
 
@@ -40,6 +43,30 @@ public class WaitingListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         GameManager gameManager = NCGame.getInstance().getGameManager();
         if (event.getAction().toString().contains("RIGHT")) return;
+        if (gameManager.getCurrentStatus() != Status.PLAYING) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInteract(PlayerShearEntityEvent event) {
+        GameManager gameManager = NCGame.getInstance().getGameManager();
+        if (gameManager.getCurrentStatus() != Status.PLAYING) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPickup(PlayerPickupItemEvent event) {
+        GameManager gameManager = NCGame.getInstance().getGameManager();
+        if (gameManager.getCurrentStatus() != Status.PLAYING) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onProjLaunch(ProjectileLaunchEvent event) {
+        GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.PLAYING) {
             event.setCancelled(true);
         }

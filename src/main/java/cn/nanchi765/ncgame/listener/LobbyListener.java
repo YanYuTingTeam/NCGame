@@ -39,14 +39,13 @@ public class LobbyListener implements Listener {
         NCGame.getInstance().getScoreBoardManager().updateScoreBoard(player);
         // 热加入玩家
         GameManager gameManager = NCGame.getInstance().getGameManager();
-        if (gameManager.getCurrentStatus() != Status.WAITING && gameManager.getCurrentGame() != null) {
+        if (gameManager.getCurrentStatus() != Status.WAITING) {
             gameManager.addLatePlayer(player);
             return;
         }
         gameManager.addPlayer(player);
         // 传送大厅
         teleportToLobby(player);
-        NCGame.getInstance().getScoreBoardManager().updateScoreBoard(player);
 
         // 达到人数 开始倒计时
         if (gameManager.getGameStartingTask() == null && gameManager.getPlayers().size() >= lobbyConfig.getMinPlayers()) {
@@ -58,6 +57,7 @@ public class LobbyListener implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         gameManager.removePlayer(player);
+        NCGame.getInstance().getScoreBoardManager().removeScoreBoard(player);
         // 人数离开 没达到人数 取消倒计时
         if (gameManager.getGameStartingTask() != null && gameManager.getPlayers().size() < lobbyConfig.getMinPlayers()) {
             gameManager.getGameStartingTask().cancel();
@@ -72,11 +72,14 @@ public class LobbyListener implements Listener {
         Player player = event.getPlayer();
         if (!event.getAction().toString().contains("RIGHT")) return;
         ItemStack item = event.getItem();
-            if (item != null && item == lobbyConfig.getLobbyItem()) {
-                event.setCancelled(true);
-                LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
-            }
+        if (item != null && item.hasItemMeta() && lobbyConfig.getLobbyItem().hasItemMeta()
+                && item.getItemMeta().hasDisplayName() && lobbyConfig.getLobbyItem().getItemMeta().hasDisplayName()
+                && item.getItemMeta().getDisplayName().equals(lobbyConfig.getLobbyItem().getItemMeta().getDisplayName())) {
+            event.setCancelled(true);
+            LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
         }
+    }
+
 //        if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR ||
 //                event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
 //            ItemStack item = event.getItem();

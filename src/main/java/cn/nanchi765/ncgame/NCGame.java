@@ -3,7 +3,10 @@ package cn.nanchi765.ncgame;
 import cn.nanchi765.ncgame.config.EnableGameConfig;
 import cn.nanchi765.ncgame.config.LobbyConfig;
 import cn.nanchi765.ncgame.config.game.*;
-import cn.nanchi765.ncgame.listener.*;
+import cn.nanchi765.ncgame.listener.InGameListener;
+import cn.nanchi765.ncgame.listener.LobbyListener;
+import cn.nanchi765.ncgame.listener.MOTDListener;
+import cn.nanchi765.ncgame.listener.WaitingListener;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.PlayerDataManager;
 import cn.nanchi765.ncgame.manager.ScoreBoardManager;
@@ -61,10 +64,8 @@ public class NCGame extends JavaPlugin {
         gameManager = new GameManager(this);
         scoreBoardManager = new ScoreBoardManager(this, gameManager, lobbyConfig);
 
-        getServer().getPluginManager().registerEvents(new FoodLevelChangeListener(), this);
         getServer().getPluginManager().registerEvents(new InGameListener(), this);
         getServer().getPluginManager().registerEvents(new LobbyListener(), this);
-        getServer().getPluginManager().registerEvents(new SpecListener(), this);
         getServer().getPluginManager().registerEvents(new MOTDListener(), this);
         getServer().getPluginManager().registerEvents(new WaitingListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
@@ -78,7 +79,7 @@ public class NCGame extends JavaPlugin {
         // 初始化数据管理器，恢复持久化积分
         playerDataManager = new PlayerDataManager(this);
         Map<UUID, Integer> savedScores = playerDataManager.loadAllScores();
-        gameManager.getPlayerScores().putAll(savedScores);
+        playerDataManager.getPlayerScores().putAll(savedScores);
 
         World lobbyWorld = getServer().getWorld(lobbyConfig.getWorldName());
         if (lobbyWorld != null) lobbyWorld.setPVP(false);
@@ -111,12 +112,9 @@ public class NCGame extends JavaPlugin {
     }
 
     public void addScore(Player player, int amount) {
-        int newScore = gameManager.getPlayerScores().merge(player.getUniqueId(), amount, Integer::sum);
-        playerDataManager.savePlayerScore(player, newScore);  // 传入 Player 以保存名称
-    }
-
-    public int getPlayerScore(Player player) {
-        return gameManager.getPlayerScores().getOrDefault(player.getUniqueId(), 0);
+        gameManager.getPlayerScores().merge(player.getUniqueId(), amount, Integer::sum);
+        int newScore = playerDataManager.getPlayerScores().merge(player.getUniqueId(), amount, Integer::sum);
+        playerDataManager.savePlayerScore(player, newScore);
     }
 
     private void resetAllGameWorlds() {

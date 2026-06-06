@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -90,8 +89,6 @@ public class FaithBlockGame implements Listener, IMinigame {
         cancelChangeTask();
         broadcastRanking();
         HandlerList.unregisterAll(this);
-
-        
     }
 
     // ========== 区域操作 ==========
@@ -278,13 +275,7 @@ public class FaithBlockGame implements Listener, IMinigame {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onDamage(EntityDamageByEntityEvent event) {
-        if (!GameUtils.isGameActive(this)) return;
-        event.setCancelled(true);
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onFallDamage(EntityDamageEvent event) {
+    public void onDamage(EntityDamageEvent event) {
         if (!GameUtils.isGameActive(this)) return;
         event.setCancelled(true);
     }

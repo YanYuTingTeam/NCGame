@@ -7,17 +7,13 @@ import lombok.var;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 import static cn.nanchi765.ncgame.utils.Utils.colorize;
 
 public class ScoreBoardManager {
 
-    private final Map<UUID, FastBoard> boards = new ConcurrentHashMap<>();
+    private final Map<UUID, FastBoard> boards = new HashMap<>();
     private final NCGame plugin;
     private final GameManager gameManager;
     private final LobbyConfig lobbyConfig;
@@ -81,7 +77,7 @@ public class ScoreBoardManager {
         int gameTime = isLobby
                 ? 0
                 : gameManager.getCurrentGame().getConfig().getGameTime();
-        int playerScore  = plugin.getPlayerScore(player);
+        int playerScore = gameManager.getPlayerScores().getOrDefault(player.getUniqueId(), 0);
         int currentSize  = gameManager.getPlayers().size();
         int minPlayers   = lobbyConfig.getMinPlayers();
         int required     = lobbyConfig.getRequiredPlayers();
