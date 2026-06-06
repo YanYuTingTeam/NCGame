@@ -60,6 +60,7 @@ public class ChefMGame implements Listener, IMinigame {
     private final Map<Location, BukkitTask> chestTasks = new HashMap<>();
     private final Map<Location, Player> furnaceUsers = new HashMap<>();
     private final Map<Location, ChefMConfig.ChestConfig> chestConfigMap = new HashMap<>();
+    private final Map<Location, ItemStack[]> chestSnapshots = new HashMap<>();
     private final Random random = new Random();
 
 
@@ -113,6 +114,7 @@ public class ChefMGame implements Listener, IMinigame {
         chestTasks.clear();
         furnaceUsers.clear();
         chestConfigMap.clear();
+        chestSnapshots.clear();
         announceResults();
         HandlerList.unregisterAll(this);
         
@@ -341,6 +343,11 @@ public class ChefMGame implements Listener, IMinigame {
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!isGameActive(this)) return;
         if (!(event.getPlayer() instanceof Player)) return;
+        if (event.getInventory().getHolder() instanceof Chest) {
+            Chest chest = (Chest) event.getInventory().getHolder();
+            Location loc = chest.getBlock().getLocation();
+            if (chestConfigMap.containsKey(loc)) chestSnapshots.put(loc, event.getInventory().getContents().clone());
+        }
         if (config.isFurnaceLockEnabled() && event.getInventory().getHolder() instanceof Furnace) {
             Furnace furnace = (Furnace) event.getInventory().getHolder();
             Location loc = furnace.getBlock().getLocation();
@@ -368,25 +375,46 @@ public class ChefMGame implements Listener, IMinigame {
         }
         // 延迟1秒刷箱子
         Inventory inv = event.getInventory();
+        //if (inv.getHolder() instanceof Chest) {
+        //    Chest chest = (Chest) inv.getHolder();
+        //    Location loc = chest.getBlock().getLocation();
+        //    ChefMConfig.ChestConfig cc = chestConfigMap.get(loc);
+        //    if (cc != null) {
+        //        new BukkitRunnable() {
+        //            @Override
+        //            public void run() {
+        //                if (!isGameActive(ChefMGame.this)) return;
+        //                Block b = loc.getBlock();
+        //                if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
+        //                    Chest c = (Chest) b.getState();
+        //                    refillChest(cc, c.getBlockInventory());
+        //                }
+        //            }
+        //        }.runTaskLater(plugin, 20L);
+        //    }
+        //}
         if (inv.getHolder() instanceof Chest) {
             Chest chest = (Chest) inv.getHolder();
             Location loc = chest.getBlock().getLocation();
             ChefMConfig.ChestConfig cc = chestConfigMap.get(loc);
             if (cc != null) {
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        if (!isGameActive(ChefMGame.this)) return;
-                        Block b = loc.getBlock();
-                        if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
-                            Chest c = (Chest) b.getState();
-                            refillChest(cc, c.getBlockInventory());
-                        }
-                    }
-                }.runTaskLater(plugin, 20L);
+                ItemStack[] snapshot = chestSnapshots.remove(loc);
+                if (snapshot != null && !contentsEqual(snapshot, inv.getContents())) refillChest(cc, inv);
             }
         }
     }
+
+    private boolean contentsEqual(ItemStack[] a, ItemStack[] b) {
+        if (a.length != b.length) return false;
+        for (int i = 0; i < a.length; i++) {
+            ItemStack ai = a[i];
+            ItemStack bi = b[i];
+            if (ai == null && bi == null) continue;
+            if (ai == null || bi == null) return false;
+            if (ai.getType() != bi.getType() || ai.getAmount() != bi.getAmount()) return false;
+        }return true;
+    }
+
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
