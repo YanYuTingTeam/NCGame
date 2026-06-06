@@ -218,7 +218,7 @@ public class QuickHandsGame implements Listener, IMinigame {
         }
 
         if (finishedSet.size() == gameManager.getAlivePlayers().size()) {
-            end();
+            gameManager.getGamePlayingTask().setCountdown(0);
         }
     }
 
