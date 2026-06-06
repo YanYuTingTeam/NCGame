@@ -128,6 +128,7 @@ public class ChefMGame implements Listener, IMinigame {
             Villager villager = (Villager) loc.getWorld().spawnEntity(loc, EntityType.VILLAGER);
             villager.setRemoveWhenFarAway(false);
             villager.setAdult();
+            villager.setCustomName("§2美食家");
         }
     }
 
@@ -527,7 +528,7 @@ public class ChefMGame implements Listener, IMinigame {
         String completeMsg = ChatColor.GREEN + player.getName() + " "
                 + ChatColor.AQUA + "完成了 " + ChatColor.RED + task.getDisplayName()
                 + ChatColor.AQUA + "！";
-        for (Player p : Bukkit.getOnlinePlayers()) {
+        for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", completeMsg, 10, 70, 10);
         }
     }

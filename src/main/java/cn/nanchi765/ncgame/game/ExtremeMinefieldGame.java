@@ -146,7 +146,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 player.setGameMode(GameMode.SPECTATOR);
                 player.teleport(config.getSpectatorSpawn());
                 String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedPlayers.size() + " 名）";
-                for (Player p : Bukkit.getOnlinePlayers()) {
+                for (Player p : gameManager.getPlayers()) {
                     p.sendTitle("", msg, 10, 70, 10);
                 }
                 if (finishedPlayers.size() == alivePlayers.size()) {
