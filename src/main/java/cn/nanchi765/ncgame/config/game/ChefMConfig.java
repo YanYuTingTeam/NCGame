@@ -219,6 +219,14 @@ public class ChefMConfig implements GameConfig {
         return "快速烹饪食物交给美食家";
     }
 
+    public boolean isFurnaceLockEnabled() {
+        return config.getBoolean("game.furnace-lock.enabled", true);
+    }
+
+    public String getFurnaceLockMessage() {
+        return ChatColor.translateAlternateColorCodes('&',config.getString("game.furnace-lock.message", "&c该熔炉正在被其他玩家使用!"));
+    }
+
     // 内部类：独立箱子配置
     public static class ChestConfig {
         public final Location location;

@@ -59,6 +59,9 @@ game:
       amount-min: 1
       amount-max: 3
       refill-delay: 40
+  furnace-lock:
+    enabled: true
+    message: "&c该熔炉正在被其他玩家使用!"
   # 任务（保留原有的收集任务，可使用动物掉落物或箱子物品）
   tasks:
     1:

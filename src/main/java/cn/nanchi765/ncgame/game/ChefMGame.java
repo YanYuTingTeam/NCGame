@@ -3,11 +3,13 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.ChefMConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
+import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Furnace;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -19,6 +21,8 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -54,6 +58,8 @@ public class ChefMGame implements Listener, IMinigame {
     private final Map<Player, Integer> scores = new HashMap<>();
     private final Map<Player, Integer> taskIndex = new HashMap<>();
     private final Map<Location, BukkitTask> chestTasks = new HashMap<>();
+    private final Map<Location, Player> furnaceUsers = new HashMap<>();
+    private final Map<Location, ChefMConfig.ChestConfig> chestConfigMap = new HashMap<>();
     private final Random random = new Random();
 
 
@@ -105,6 +111,8 @@ public class ChefMGame implements Listener, IMinigame {
     public void end() {
         chestTasks.values().forEach(BukkitTask::cancel);
         chestTasks.clear();
+        furnaceUsers.clear();
+        chestConfigMap.clear();
         announceResults();
         HandlerList.unregisterAll(this);
         
@@ -153,7 +161,7 @@ public class ChefMGame implements Listener, IMinigame {
             chestData.setFacingDirection(cc.facing);
             chest.setData(chestData);
             chest.update();
-
+            chestConfigMap.put(loc, cc);
             refillChest(cc, chest.getBlockInventory());
             startChestRefillTask(cc, loc);
         }
@@ -320,11 +328,63 @@ public class ChefMGame implements Listener, IMinigame {
     }
 
     // 锁定第8格
+    // 锁了个底壳 如锁
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
         if (event.getClickedInventory() == player.getInventory() && event.getSlot() == 8) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        if (!isGameActive(this)) return;
+        if (!(event.getPlayer() instanceof Player)) return;
+        if (config.isFurnaceLockEnabled() && event.getInventory().getHolder() instanceof Furnace) {
+            Furnace furnace = (Furnace) event.getInventory().getHolder();
+            Location loc = furnace.getBlock().getLocation();
+            Player currentUser = furnaceUsers.get(loc);
+            if (currentUser != null && currentUser.isOnline() && !currentUser.equals(event.getPlayer())) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage(config.getFurnaceLockMessage());
+                return;
+            }
+            furnaceUsers.put(loc, (Player) event.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (!isGameActive(this)) return;
+        if (!(event.getPlayer() instanceof Player)) return;
+        if (event.getInventory().getHolder() instanceof Furnace) {
+            Furnace furnace = (Furnace) event.getInventory().getHolder();
+            Location loc = furnace.getBlock().getLocation();
+            Player currentUser = furnaceUsers.get(loc);
+            if (currentUser != null && currentUser.equals(event.getPlayer())) {
+                furnaceUsers.remove(loc);
+            }
+        }
+        // 延迟1秒刷箱子
+        Inventory inv = event.getInventory();
+        if (inv.getHolder() instanceof Chest) {
+            Chest chest = (Chest) inv.getHolder();
+            Location loc = chest.getBlock().getLocation();
+            ChefMConfig.ChestConfig cc = chestConfigMap.get(loc);
+            if (cc != null) {
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (!isGameActive(ChefMGame.this)) return;
+                        Block b = loc.getBlock();
+                        if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
+                            Chest c = (Chest) b.getState();
+                            refillChest(cc, c.getBlockInventory());
+                        }
+                    }
+                }.runTaskLater(plugin, 20L);
+            }
         }
     }
 
