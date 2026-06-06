@@ -54,7 +54,7 @@ public class GameStartingTask implements Runnable {
             return;
         }
 
-        task.cancel();
+        this.cancel();
 
         ArrayList<String> pending = NCGame.getInstance().getEnableGameConfig().getAllGames().entrySet().stream()
                 .filter(Map.Entry::getValue)
@@ -72,7 +72,6 @@ public class GameStartingTask implements Runnable {
         gameManager.getPendingGames().addAll(pending);
 
         gameManager.startNextGame();
-        gameManager.setGameStartingTask(null);
     }
 
     public void cancel() {
@@ -80,5 +79,6 @@ public class GameStartingTask implements Runnable {
             p.sendMessage(ChatColor.RED + "人数不足，倒计时取消");
         }
         task.cancel();
+        gameManager.setGameStartingTask(null);
     }
 }

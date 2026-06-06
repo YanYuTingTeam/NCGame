@@ -36,9 +36,7 @@ public class InGameListener implements Listener {
         if (gameManager.getCurrentGame() == null) return;
 
         Player player = event.getPlayer();
-        if (GameUtils.isAlive(player)) {
-            gameManager.getCurrentGame().eliminatePlayer(player);
-        }
+        gameManager.removePlayer(player);
     }
 
 //        @EventHandler
@@ -95,7 +93,7 @@ public class InGameListener implements Listener {
 
         Player player = event.getPlayer();
         GameConfig config = gameManager.getCurrentGame().getConfig();
-        boolean alive = gameManager.getAlivePlayers().contains(player) || (!player.getGameMode().equals(GameMode.SPECTATOR));
+        boolean alive = gameManager.getAlivePlayers().contains(player);
 
         if (alive) return; // 存活玩家不受限制
 

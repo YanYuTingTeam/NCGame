@@ -76,7 +76,7 @@ public class LobbyConfig {
     public ItemStack createReturnItem() {
         Material m = Material.getMaterial(config.getString("return-item.material", "REDSTONE_BLOCK"));
         ItemStack itemStack = new ItemStack(m, 1);
-        itemStack.setDurability((short) config.getInt("return-item.data",0));
+        itemStack.setDurability((short) config.getInt("return-item.data", 0));
         ItemMeta meta = itemStack.getItemMeta();
         meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', config.getString("return-item.name", "&c返回大厅")));
         itemStack.setItemMeta(meta);

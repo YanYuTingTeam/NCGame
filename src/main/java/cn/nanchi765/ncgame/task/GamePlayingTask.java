@@ -58,13 +58,13 @@ public class GamePlayingTask implements Runnable {
             return;
         }
 
-        task.cancel();
-        gameManager.setGamePlayingTask(null);
+        this.cancel();
         minigame.end();
         gameManager.onMinigameEnd();
     }
 
     public void cancel() {
+        gameManager.setGamePlayingTask(null);
         task.cancel();
     }
 }

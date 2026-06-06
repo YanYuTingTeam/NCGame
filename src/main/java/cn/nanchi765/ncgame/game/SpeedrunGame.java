@@ -96,7 +96,7 @@ public class SpeedrunGame implements Listener, IMinigame {
 
         HandlerList.unregisterAll(this);
 
-        
+
     }
 
     // ======================== 结算辅助 ========================

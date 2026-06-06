@@ -24,18 +24,19 @@ public class GameManager {
 
     // ==================== 游戏注册表 ====================
     private static final Map<String, BiFunction<NCGame, File, IMinigame>> GAME_FACTORIES = new LinkedHashMap<>();
+
     static {
-        GAME_FACTORIES.put("掘一死战",   (p, d) -> new SnowSpleefGame(p, new SnowSpleefConfig(new File(d, "games/snowspleef.yml"))));
-        GAME_FACTORIES.put("眼疾手快",   (p, d) -> new QuickHandsGame(p, new QuickHandsConfig(new File(d, "games/quickhands.yml"))));
-        GAME_FACTORIES.put("极限雷区",   (p, d) -> new ExtremeMinefieldGame(p, new ExtremeMinefieldConfig(new File(d, "games/extrememinefield.yml"))));
-        GAME_FACTORIES.put("大扫除",     (p, d) -> new CleanupGame(p, new CleanupConfig(new File(d, "games/cleanup.yml"))));
-        GAME_FACTORIES.put("急速酷跑",   (p, d) -> new SpeedrunGame(p, new SpeedrunConfig(new File(d, "games/speedrun.yml"))));
-        GAME_FACTORIES.put("一箭必杀",   (p, d) -> new OneHitKillGame(p, new OneHitKillConfig(new File(d, "games/onehitkill.yml"))));
-        GAME_FACTORIES.put("厨神",       (p, d) -> new ChefMGame(p, new ChefMConfig(new File(d, "games/chefm.yml"))));
-        GAME_FACTORIES.put("炸弹羊",     (p, d) -> new BombSheepGame(p, new BombSheepConfig(new File(d, "games/bombsheep.yml"))));
-        GAME_FACTORIES.put("击退战",     (p, d) -> new KnockbackBattleGame(p, new KnockbackBattleConfig(new File(d, "games/knockbackbattle.yml"))));
-        GAME_FACTORIES.put("贪吃蛇",     (p, d) -> new SnakeGame(p, new SnakeConfig(new File(d, "games/snake.yml"))));
-        GAME_FACTORIES.put("信仰方块",   (p, d) -> new FaithBlockGame(p, new FaithBlockConfig(new File(d, "games/faithblock.yml"))));
+        GAME_FACTORIES.put("掘一死战", (p, d) -> new SnowSpleefGame(p, new SnowSpleefConfig(new File(d, "games/snowspleef.yml"))));
+        GAME_FACTORIES.put("眼疾手快", (p, d) -> new QuickHandsGame(p, new QuickHandsConfig(new File(d, "games/quickhands.yml"))));
+        GAME_FACTORIES.put("极限雷区", (p, d) -> new ExtremeMinefieldGame(p, new ExtremeMinefieldConfig(new File(d, "games/extrememinefield.yml"))));
+        GAME_FACTORIES.put("大扫除", (p, d) -> new CleanupGame(p, new CleanupConfig(new File(d, "games/cleanup.yml"))));
+        GAME_FACTORIES.put("急速酷跑", (p, d) -> new SpeedrunGame(p, new SpeedrunConfig(new File(d, "games/speedrun.yml"))));
+        GAME_FACTORIES.put("一箭必杀", (p, d) -> new OneHitKillGame(p, new OneHitKillConfig(new File(d, "games/onehitkill.yml"))));
+        GAME_FACTORIES.put("厨神", (p, d) -> new ChefMGame(p, new ChefMConfig(new File(d, "games/chefm.yml"))));
+        GAME_FACTORIES.put("炸弹羊", (p, d) -> new BombSheepGame(p, new BombSheepConfig(new File(d, "games/bombsheep.yml"))));
+        GAME_FACTORIES.put("击退战", (p, d) -> new KnockbackBattleGame(p, new KnockbackBattleConfig(new File(d, "games/knockbackbattle.yml"))));
+        GAME_FACTORIES.put("贪吃蛇", (p, d) -> new SnakeGame(p, new SnakeConfig(new File(d, "games/snake.yml"))));
+        GAME_FACTORIES.put("信仰方块", (p, d) -> new FaithBlockGame(p, new FaithBlockConfig(new File(d, "games/faithblock.yml"))));
     }
 
     // ==================== 字段 ====================
@@ -45,15 +46,27 @@ public class GameManager {
     private final File dataFolder;
     private final Set<String> gameWorldNames;
 
-    @Getter private final List<String> pendingGames = new ArrayList<>();
-    @Getter private final List<Player> players = new ArrayList<>();
-    @Getter private final List<Player> alivePlayers = new ArrayList<>();
+    @Getter
+    private final List<String> pendingGames = new ArrayList<>();
+    @Getter
+    private final List<Player> players = new ArrayList<>();
+    @Getter
+    private final List<Player> alivePlayers = new ArrayList<>();
 
-    @Getter private IMinigame currentGame;
-    @Getter @Setter private Status currentStatus;
-    @Getter @Setter private GameStartingTask gameStartingTask = null;
-    @Getter @Setter private GamePrepareTask gamePrepareTask = null;
-    @Getter @Setter private GamePlayingTask gamePlayingTask = null;
+    @Getter
+    private IMinigame currentGame;
+    @Getter
+    @Setter
+    private Status currentStatus;
+    @Getter
+    @Setter
+    private GameStartingTask gameStartingTask = null;
+    @Getter
+    @Setter
+    private GamePrepareTask gamePrepareTask = null;
+    @Getter
+    @Setter
+    private GamePlayingTask gamePlayingTask = null;
 
     // ==================== 构造 ====================
     public GameManager(NCGame plugin) {
@@ -158,7 +171,6 @@ public class GameManager {
 
         if (gamePlayingTask != null) {
             gamePlayingTask.cancel();
-            gamePlayingTask = null;
             return;
         }
 

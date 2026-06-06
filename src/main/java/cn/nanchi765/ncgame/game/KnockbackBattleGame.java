@@ -80,11 +80,14 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void end() {
-        resetAllPlayers();
+        for (Player p : gameManager.getPlayers()) {
+            GameUtils.resetPlayer(p);
+        }
+        lastDoubleJumpTimes.clear();
+        hasDoubleJumped.clear();
+
         broadcastRanking();
         HandlerList.unregisterAll(this);
-
-        
     }
 
     // ========== 物品创建 ==========
@@ -167,21 +170,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
             return SCORE_TABLE[rank];
         }
         return 0;
-    }
-
-    // ========== 玩家状态重置 ==========
-
-    private void resetAllPlayers() {
-        for (Player p : gameManager.getPlayers()) {
-            p.setAllowFlight(false);
-            p.setFlying(false);
-            p.getInventory().clear();
-            if (gameManager.getAlivePlayers().contains(p)) {
-                GameUtils.resetPlayer(p);
-            }
-        }
-        lastDoubleJumpTimes.clear();
-        hasDoubleJumped.clear();
     }
 
     // ========== 事件监听 ==========

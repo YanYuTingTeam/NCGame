@@ -61,7 +61,6 @@ public class LobbyListener implements Listener {
         // 人数离开 没达到人数 取消倒计时
         if (gameManager.getGameStartingTask() != null && gameManager.getPlayers().size() < lobbyConfig.getMinPlayers()) {
             gameManager.getGameStartingTask().cancel();
-            gameManager.setGameStartingTask(null);
         }
     }
 

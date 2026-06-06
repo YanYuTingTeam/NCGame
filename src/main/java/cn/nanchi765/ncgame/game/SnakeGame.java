@@ -33,12 +33,11 @@ public class SnakeGame implements Listener, IMinigame {
     private final GameManager gameManager;
 
     private final Set<String> vanishBlockSet;
-    private BukkitTask vanishTask;
-
     /**
      * 掉落淘汰的 Y 坐标阈值
      */
     private final double deathY;
+    private BukkitTask vanishTask;
 
     public SnakeGame(JavaPlugin plugin, SnakeConfig config) {
         this.plugin = plugin;
@@ -113,7 +112,7 @@ public class SnakeGame implements Listener, IMinigame {
 
         HandlerList.unregisterAll(this);
 
-        
+
     }
 
     @Override

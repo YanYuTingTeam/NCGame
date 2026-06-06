@@ -21,7 +21,6 @@ public class GamePrepareTask implements Runnable {
     private final GameManager gameManager;
     private final IMinigame minigame;
     private final GameConfig gameConfig;
-    private final int reqPlayers;
     @Getter
     @Setter
     private int countdown;
@@ -31,13 +30,11 @@ public class GamePrepareTask implements Runnable {
         this.minigame = minigame;
         this.gameConfig = minigame.getConfig();
         this.countdown = gameConfig.getPrepareTime();
-        this.reqPlayers = NCGame.getInstance().getLobbyConfig().getRequiredPlayers();
         this.task = Bukkit.getScheduler().runTaskTimer(NCGame.getInstance(), this, 0, 20L);
-        gameManager.setCurrentStatus(Status.PREPARE);
-
         for (Player player : gameManager.getPlayers()) {
             GameUtils.resetPlayer(player);
         }
+        gameManager.setCurrentStatus(Status.PREPARE);
         minigame.prepare();
     }
 
@@ -71,12 +68,12 @@ public class GamePrepareTask implements Runnable {
             return;
         }
 
-        task.cancel();
-        gameManager.setGamePrepareTask(null);
+        this.cancel();
         gameManager.setGamePlayingTask(new GamePlayingTask(gameManager, minigame));
     }
 
     public void cancel() {
+        gameManager.setGamePrepareTask(null);
         task.cancel();
     }
 }

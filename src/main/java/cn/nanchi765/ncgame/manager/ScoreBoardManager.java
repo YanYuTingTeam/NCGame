@@ -78,20 +78,20 @@ public class ScoreBoardManager {
                 ? 0
                 : gameManager.getCurrentGame().getConfig().getGameTime();
         int playerScore = gameManager.getPlayerScores().getOrDefault(player.getUniqueId(), 0);
-        int currentSize  = isLobby ? gameManager.getPlayers().size() : gameManager.getAlivePlayers().size();
-        int minPlayers   = lobbyConfig.getMinPlayers();
-        int required     = lobbyConfig.getRequiredPlayers();
+        int currentSize = isLobby ? gameManager.getPlayers().size() : gameManager.getAlivePlayers().size();
+        int minPlayers = lobbyConfig.getMinPlayers();
+        int required = lobbyConfig.getRequiredPlayers();
 
         List<String> result = new ArrayList<>(template.size());
         for (String line : template) {
             String replaced = line
                     .replace("{current_players}", String.valueOf(currentSize))
-                    .replace("{min_players}",      String.valueOf(minPlayers))
-                    .replace("{required_players}",  String.valueOf(required))
+                    .replace("{min_players}", String.valueOf(minPlayers))
+                    .replace("{required_players}", String.valueOf(required))
                     .replace("{countdown}", countdown)
                     .replace("{time_left}", countdown)
-                    .replace("{total_time}",        String.valueOf(gameTime))
-                    .replace("{score}",      String.valueOf(playerScore));
+                    .replace("{total_time}", String.valueOf(gameTime))
+                    .replace("{score}", String.valueOf(playerScore));
             result.add(colorize(replaced));
         }
         return result;

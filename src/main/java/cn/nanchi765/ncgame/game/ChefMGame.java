@@ -3,7 +3,6 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.ChefMConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
-import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
@@ -24,15 +23,14 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
@@ -119,7 +117,7 @@ public class ChefMGame implements Listener, IMinigame {
         chestSnapshots.clear();
         announceResults();
         HandlerList.unregisterAll(this);
-        
+
     }
 
     private void spawnVillagers() {
@@ -413,7 +411,8 @@ public class ChefMGame implements Listener, IMinigame {
                             Block b = loc.getBlock();
                             if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
                                 Chest c = (Chest) b.getState();
-                                refillChest(cc, c.getBlockInventory());}
+                                refillChest(cc, c.getBlockInventory());
+                            }
                         }
                     }.runTaskLater(plugin, cc.refillDelay);
                 }
@@ -430,7 +429,8 @@ public class ChefMGame implements Listener, IMinigame {
             if (ai == null && bi == null) continue;
             if (ai == null || bi == null) return false;
             if (ai.getType() != bi.getType() || ai.getAmount() != bi.getAmount()) return false;
-        }return true;
+        }
+        return true;
     }
 
     @EventHandler

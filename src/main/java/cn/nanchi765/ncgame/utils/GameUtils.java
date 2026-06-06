@@ -36,11 +36,16 @@ public class GameUtils {
         return gameManager.getCurrentGame() == minigame && gameManager.getCurrentStatus() == Status.PLAYING;
     }
 
+    // 如果没有提供需要人数 则默认取大厅最少人数
     public static boolean cancelIfNotEnoughPlayers() {
-        GameManager gm = NCGame.getInstance().getGameManager();
         LobbyConfig cfg = NCGame.getInstance().getLobbyConfig();
+        return cancelIfNotEnoughPlayers(cfg.getMinPlayers());
+    }
 
-        if (gm.getPlayers().size() >= cfg.getMinPlayers()) {
+    public static boolean cancelIfNotEnoughPlayers(int reqPlayer) {
+        GameManager gm = NCGame.getInstance().getGameManager();
+
+        if (gm.getPlayers().size() >= reqPlayer) {
             return false;
         }
 

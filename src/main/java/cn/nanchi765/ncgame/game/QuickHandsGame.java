@@ -90,7 +90,7 @@ public class QuickHandsGame implements Listener, IMinigame {
 
         HandlerList.unregisterAll(this);
 
-        
+
     }
 
     @Override

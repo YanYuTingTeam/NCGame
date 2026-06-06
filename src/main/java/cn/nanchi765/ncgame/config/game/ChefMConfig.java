@@ -224,7 +224,7 @@ public class ChefMConfig implements GameConfig {
     }
 
     public String getFurnaceLockMessage() {
-        return ChatColor.translateAlternateColorCodes('&',config.getString("game.furnace-lock.message", "&c该熔炉正在被其他玩家使用!"));
+        return ChatColor.translateAlternateColorCodes('&', config.getString("game.furnace-lock.message", "&c该熔炉正在被其他玩家使用!"));
     }
 
     // 内部类：独立箱子配置
