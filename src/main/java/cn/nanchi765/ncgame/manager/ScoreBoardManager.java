@@ -78,7 +78,7 @@ public class ScoreBoardManager {
                 ? 0
                 : gameManager.getCurrentGame().getConfig().getGameTime();
         int playerScore = gameManager.getPlayerScores().getOrDefault(player.getUniqueId(), 0);
-        int currentSize  = gameManager.getAlivePlayers().size();
+        int currentSize  = isLobby ? gameManager.getPlayers().size() : gameManager.getAlivePlayers().size();
         int minPlayers   = lobbyConfig.getMinPlayers();
         int required     = lobbyConfig.getRequiredPlayers();
 
