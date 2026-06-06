@@ -25,17 +25,17 @@ public class GameManager {
     // ==================== 游戏注册表 ====================
     private static final Map<String, BiFunction<NCGame, File, IMinigame>> GAME_FACTORIES = new LinkedHashMap<>();
     static {
-        GAME_FACTORIES.put("掘一死战",   (p, d) -> new SnowSpleefGame(p, new SnowSpleefConfig(new File(d, "snowspleef.yml"))));
-        GAME_FACTORIES.put("眼疾手快",   (p, d) -> new QuickHandsGame(p, new QuickHandsConfig(new File(d, "quickhands.yml"))));
-        GAME_FACTORIES.put("极限雷区",   (p, d) -> new ExtremeMinefieldGame(p, new ExtremeMinefieldConfig(new File(d, "extrememinefield.yml"))));
-        GAME_FACTORIES.put("大扫除",     (p, d) -> new CleanupGame(p, new CleanupConfig(new File(d, "cleanup.yml"))));
-        GAME_FACTORIES.put("急速酷跑",   (p, d) -> new SpeedrunGame(p, new SpeedrunConfig(new File(d, "speedrun.yml"))));
-        GAME_FACTORIES.put("一箭必杀",   (p, d) -> new OneHitKillGame(p, new OneHitKillConfig(new File(d, "onehitkill.yml"))));
-        GAME_FACTORIES.put("厨神",       (p, d) -> new ChefMGame(p, new ChefMConfig(new File(d, "chefm.yml"))));
-        GAME_FACTORIES.put("炸弹羊",     (p, d) -> new BombSheepGame(p, new BombSheepConfig(new File(d, "bombsheep.yml"))));
-        GAME_FACTORIES.put("击退战",     (p, d) -> new KnockbackBattleGame(p, new KnockbackBattleConfig(new File(d, "knockbackbattle.yml"))));
-        GAME_FACTORIES.put("贪吃蛇",     (p, d) -> new SnakeGame(p, new SnakeConfig(new File(d, "snake.yml"))));
-        GAME_FACTORIES.put("信仰方块",   (p, d) -> new FaithBlockGame(p, new FaithBlockConfig(new File(d, "faithblock.yml"))));
+        GAME_FACTORIES.put("掘一死战",   (p, d) -> new SnowSpleefGame(p, new SnowSpleefConfig(new File(d, "games/snowspleef.yml"))));
+        GAME_FACTORIES.put("眼疾手快",   (p, d) -> new QuickHandsGame(p, new QuickHandsConfig(new File(d, "games/quickhands.yml"))));
+        GAME_FACTORIES.put("极限雷区",   (p, d) -> new ExtremeMinefieldGame(p, new ExtremeMinefieldConfig(new File(d, "games/extrememinefield.yml"))));
+        GAME_FACTORIES.put("大扫除",     (p, d) -> new CleanupGame(p, new CleanupConfig(new File(d, "games/cleanup.yml"))));
+        GAME_FACTORIES.put("急速酷跑",   (p, d) -> new SpeedrunGame(p, new SpeedrunConfig(new File(d, "games/speedrun.yml"))));
+        GAME_FACTORIES.put("一箭必杀",   (p, d) -> new OneHitKillGame(p, new OneHitKillConfig(new File(d, "games/onehitkill.yml"))));
+        GAME_FACTORIES.put("厨神",       (p, d) -> new ChefMGame(p, new ChefMConfig(new File(d, "games/chefm.yml"))));
+        GAME_FACTORIES.put("炸弹羊",     (p, d) -> new BombSheepGame(p, new BombSheepConfig(new File(d, "games/bombsheep.yml"))));
+        GAME_FACTORIES.put("击退战",     (p, d) -> new KnockbackBattleGame(p, new KnockbackBattleConfig(new File(d, "games/knockbackbattle.yml"))));
+        GAME_FACTORIES.put("贪吃蛇",     (p, d) -> new SnakeGame(p, new SnakeConfig(new File(d, "games/snake.yml"))));
+        GAME_FACTORIES.put("信仰方块",   (p, d) -> new FaithBlockGame(p, new FaithBlockConfig(new File(d, "games/faithblock.yml"))));
     }
 
     // ==================== 字段 ====================
@@ -62,18 +62,19 @@ public class GameManager {
         this.currentStatus = Status.WAITING;
 
         this.gameWorldNames = new HashSet<>();
-        gameWorldNames.add(new SnowSpleefConfig(new File(dataFolder, "snowspleef.yml")).getWorldName());
-        gameWorldNames.add(new QuickHandsConfig(new File(dataFolder, "quickhands.yml")).getWorldName());
-        gameWorldNames.add(new ExtremeMinefieldConfig(new File(dataFolder, "extrememinefield.yml")).getWorldName());
-        gameWorldNames.add(new CleanupConfig(new File(dataFolder, "cleanup.yml")).getWorldName());
-        gameWorldNames.add(new SpeedrunConfig(new File(dataFolder, "speedrun.yml")).getWorldName());
-        gameWorldNames.add(new OneHitKillConfig(new File(dataFolder, "onehitkill.yml")).getWorldName());
-        gameWorldNames.add(new ChefMConfig(new File(dataFolder, "chefm.yml")).getWorldName());
-        gameWorldNames.add(new BombSheepConfig(new File(dataFolder, "bombsheep.yml")).getWorldName());
-        gameWorldNames.add(new KnockbackBattleConfig(new File(dataFolder, "knockbackbattle.yml")).getWorldName());
-        gameWorldNames.add(new SnakeConfig(new File(dataFolder, "snake.yml")).getWorldName());
-        gameWorldNames.add(new FaithBlockConfig(new File(dataFolder, "faithblock.yml")).getWorldName());
+        gameWorldNames.add(new SnowSpleefConfig(new File(dataFolder, "games/snowspleef.yml")).getWorldName());
+        gameWorldNames.add(new QuickHandsConfig(new File(dataFolder, "games/quickhands.yml")).getWorldName());
+        gameWorldNames.add(new ExtremeMinefieldConfig(new File(dataFolder, "games/extrememinefield.yml")).getWorldName());
+        gameWorldNames.add(new CleanupConfig(new File(dataFolder, "games/cleanup.yml")).getWorldName());
+        gameWorldNames.add(new SpeedrunConfig(new File(dataFolder, "games/speedrun.yml")).getWorldName());
+        gameWorldNames.add(new OneHitKillConfig(new File(dataFolder, "games/onehitkill.yml")).getWorldName());
+        gameWorldNames.add(new ChefMConfig(new File(dataFolder, "games/chefm.yml")).getWorldName());
+        gameWorldNames.add(new BombSheepConfig(new File(dataFolder, "games/bombsheep.yml")).getWorldName());
+        gameWorldNames.add(new KnockbackBattleConfig(new File(dataFolder, "games/knockbackbattle.yml")).getWorldName());
+        gameWorldNames.add(new SnakeConfig(new File(dataFolder, "games/snake.yml")).getWorldName());
+        gameWorldNames.add(new FaithBlockConfig(new File(dataFolder, "games/faithblock.yml")).getWorldName());
     }
+
 
     public void addPlayer(Player player) {
         GameUtils.resetPlayer(player);

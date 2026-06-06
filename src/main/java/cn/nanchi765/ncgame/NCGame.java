@@ -18,10 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class NCGame extends JavaPlugin {
 
@@ -45,17 +42,19 @@ public class NCGame extends JavaPlugin {
         // 保存默认配置文件
         saveResource("lobby.yml", false);
         saveResource("enablegame.yml", false);
-        saveResource("snowspleef.yml", false);
-        saveResource("quickhands.yml", false);
-        saveResource("extrememinefield.yml", false);
-        saveResource("cleanup.yml", false);
-        saveResource("speedrun.yml", false);
-        saveResource("onehitkill.yml", false);
-        saveResource("chefm.yml", false);
-        saveResource("bombsheep.yml", false);
-        saveResource("knockbackbattle.yml", false);
-        saveResource("snake.yml", false);
-        saveResource("faithblock.yml", false);
+
+        // 游戏配置 → games/ 目录下
+        File gamesDir = new File(getDataFolder(), "games");
+        if (!gamesDir.exists()) {
+            gamesDir.mkdirs();
+        }
+
+        for (String game : List.of(
+                "snowspleef", "quickhands", "extrememinefield", "cleanup",
+                "speedrun", "onehitkill", "chefm", "bombsheep",
+                "knockbackbattle", "snake", "faithblock")) {
+            saveResource("games/" + game + ".yml", false);
+        }
         saveDefaultConfig();
 
         lobbyConfig = new LobbyConfig(new File(getDataFolder(), "lobby.yml"));
