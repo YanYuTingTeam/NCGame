@@ -36,7 +36,9 @@ public class InGameListener implements Listener {
         if (gameManager.getCurrentGame() == null) return;
 
         Player player = event.getPlayer();
-        gameManager.removePlayer(player);
+        if (GameUtils.isAlive(player)) {
+            gameManager.getCurrentGame().eliminatePlayer(player);
+        }
     }
 
 //        @EventHandler
