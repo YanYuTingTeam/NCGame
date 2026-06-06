@@ -171,8 +171,9 @@ public class CleanupGame implements Listener, IMinigame {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
+        if (!GameUtils.isGameActive(this)) return;
         if (event.getTo().getY() < 0) {
-            plugin.
+            event.setTo(config.getSpawnLocation());
         }
 
     }

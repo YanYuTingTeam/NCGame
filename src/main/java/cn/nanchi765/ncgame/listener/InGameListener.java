@@ -14,6 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 public class InGameListener implements Listener {
@@ -28,15 +29,17 @@ public class InGameListener implements Listener {
         }
     }
 
-//    @EventHandler
-//    public void onQuit(PlayerQuitEvent event) {
-//        GameManager gameManager = NCGame.getInstance().getGameManager();
-//        if (gameManager.getCurrentStatus() != Status.PLAYING) return;
-//        if (gameManager.getCurrentGame() == null) return;
-//
-//        Player player = event.getPlayer();
-//        gameManager.getCurrentGame().eliminatePlayer(player);
-//    }
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        GameManager gameManager = NCGame.getInstance().getGameManager();
+        if (gameManager.getCurrentStatus() != Status.PLAYING) return;
+        if (gameManager.getCurrentGame() == null) return;
+
+        Player player = event.getPlayer();
+        if (GameUtils.isAlive(player)) {
+            gameManager.getCurrentGame().eliminatePlayer(player);
+        }
+    }
 
 //        @EventHandler
 //        public void onVoidDagame(EntityDamageEvent event) {
