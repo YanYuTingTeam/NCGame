@@ -16,12 +16,15 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+
+import static cn.nanchi765.ncgame.utils.GameUtils.isGameActive;
 
 public class SnowSpleefGame implements Listener, IMinigame {
 
@@ -85,8 +88,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
-
-        
     }
 
     @Override
@@ -96,6 +97,12 @@ public class SnowSpleefGame implements Listener, IMinigame {
             p.sendTitle("", title, 0, 40, 10);
         }
         gameManager.eliminatePlayer(player);
+    }
+
+    @EventHandler
+    public void onCraft(CraftItemEvent event) {
+        if (!isGameActive(this)) return;
+        event.setCancelled(true);
     }
 
     // ======================== 工具 ========================
