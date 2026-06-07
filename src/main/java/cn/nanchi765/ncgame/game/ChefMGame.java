@@ -383,7 +383,7 @@ public class ChefMGame implements Listener, IMinigame {
             ensureFurnaceCoal(furnace);
         }
 
-        // 箱子关闭后：内容变化则延迟刷新
+        // 箱子关闭后：内容变化则立即刷新
         Inventory inv = event.getInventory();
         if (inv.getHolder() instanceof Chest) {
             Chest chest = (Chest) inv.getHolder();
@@ -391,19 +391,7 @@ public class ChefMGame implements Listener, IMinigame {
             ChefMConfig.ChestConfig cc = chestConfigMap.get(loc);
             if (cc != null) {
                 ItemStack[] snapshot = chestSnapshots.remove(loc);
-                if (snapshot != null && !contentsEqual(snapshot, inv.getContents())) {
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            if (!isGameActive(ChefMGame.this)) return;
-                            Block b = loc.getBlock();
-                            if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
-                                Chest c = (Chest) b.getState();
-                                refillChest(cc, c.getBlockInventory());
-                            }
-                        }
-                    }.runTaskLater(plugin, cc.refillDelay);
-                }
+                if (snapshot != null && !contentsEqual(snapshot, inv.getContents())) refillChest(cc, inv);
             }
         }
     }
