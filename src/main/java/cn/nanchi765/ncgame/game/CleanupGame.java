@@ -175,7 +175,6 @@ public class CleanupGame implements Listener, IMinigame {
         if (event.getTo().getY() < 0) {
             event.setTo(config.getSpawnLocation());
         }
-
     }
 
     /**

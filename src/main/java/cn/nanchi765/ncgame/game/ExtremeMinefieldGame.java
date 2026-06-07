@@ -12,7 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -198,10 +198,8 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
     }
 
     @EventHandler
-    public void onDamage(EntityDamageByEntityEvent event) {
-        if (GameUtils.isGameActive(this)) {
-            event.setCancelled(true);
-        }
+    public void onDamage(EntityDamageEvent event) {
+        event.setCancelled(true);
     }
 
     @Override

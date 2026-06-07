@@ -10,7 +10,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -18,6 +17,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayingListener implements Listener {
 
@@ -69,15 +69,21 @@ public class PlayingListener implements Listener {
 //        }
 
     // 防止神秘死亡
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onDeath(final PlayerDeathEvent e) {
-        final Player player = e.getEntity();
-        player.spigot().respawn();
+    @EventHandler
+    public void onDeath(PlayerDeathEvent e) {
+        Player player = e.getEntity();
         IMinigame currentGame = gameManager.getCurrentGame();
         if (currentGame == null) return;
         if (GameUtils.isAlive(player)) {
             gameManager.getCurrentGame().eliminatePlayer(player);
         }
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                player.setGameMode(GameMode.SPECTATOR);
+                player.teleport(currentGame.getConfig().getSpectatorSpawn());
+            }
+        }.runTaskLater(NCGame.getInstance(), 3L);
     }
 
     // 重生后旁观者模式

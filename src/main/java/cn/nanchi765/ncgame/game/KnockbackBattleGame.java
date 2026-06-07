@@ -3,6 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.KnockbackBattleConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
+import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
@@ -36,6 +37,9 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     private final Map<UUID, Long> lastDoubleJumpTimes = new HashMap<>();
     private final Map<UUID, Boolean> hasDoubleJumped = new HashMap<>();
 
+    // 出生点分配记录
+    private final Map<UUID, Location> spawnAssignments = new HashMap<>();
+
     public KnockbackBattleGame(JavaPlugin plugin, KnockbackBattleConfig config) {
         this.plugin = plugin;
         this.config = config;
@@ -52,10 +56,11 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         List<Player> shuffledPlayers = new ArrayList<>(gameManager.getAlivePlayers());
         Collections.shuffle(shuffledPlayers);
 
-        // 分配出生点
+        // 分配出生点并记录
         for (int i = 0; i < shuffledPlayers.size(); i++) {
             Location loc = spawns.get(i % spawns.size());
             shuffledPlayers.get(i).teleport(loc);
+            spawnAssignments.put(shuffledPlayers.get(i).getUniqueId(), loc);
         }
 
         // 发放击退棒
@@ -84,6 +89,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         }
         lastDoubleJumpTimes.clear();
         hasDoubleJumped.clear();
+        spawnAssignments.clear();
 
         broadcastRanking();
         HandlerList.unregisterAll(this);
@@ -182,6 +188,13 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
         // 掉落淘汰
         if (player.getLocation().getY() < config.getDeathY()) {
+            if (gameManager.getCurrentStatus() == Status.PREPARE) {
+                Location spawn = spawnAssignments.get(player.getUniqueId());
+                if (spawn != null) {
+                    player.teleport(spawn);
+                }
+                return;
+            }
             eliminatePlayer(player);
             return;
         }
