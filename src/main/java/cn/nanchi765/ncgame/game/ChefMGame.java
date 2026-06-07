@@ -307,23 +307,17 @@ public class ChefMGame implements Listener, IMinigame {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
-
+        ItemStack item = event.getCurrentItem();
+        if (item == null) return;
         // 锁定任务展示格
-        if (event.getClickedInventory() == player.getInventory() && event.getSlot() == TASK_DISPLAY_SLOT) {
+        if (item.isSimilar(getTaskItem(player)) || item.isSimilar(getChefSword())) {
             event.setCancelled(true);
         }
-        if (event.getClick() == ClickType.NUMBER_KEY
-                && event.getHotbarButton() == TASK_DISPLAY_SLOT) {
-            event.setCancelled(true);
-        }
+        if (event.getClickedInventory() == null) return;
 
         // 禁止从熔炉燃料槽取出煤炭
-        if (isGameActive(this)
-                && event.getClickedInventory() != null
-                && event.getClickedInventory().getHolder() instanceof Furnace
-                && event.getSlot() == 1) {
-            ItemStack item = event.getCurrentItem();
-            if (item != null && item.getType() == Material.COAL) {
+        if (event.getClickedInventory().getHolder() instanceof Furnace && event.getSlot() == 1) {
+            if (item.getType() == Material.COAL) {
                 event.setCancelled(true);
             }
         }

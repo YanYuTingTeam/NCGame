@@ -10,6 +10,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -68,21 +69,14 @@ public class PlayingListener implements Listener {
 //        }
 
     // 防止神秘死亡
-    @EventHandler
-    public void onDeath(PlayerDeathEvent event) {
-        if (event.getEntity() == null) {
-            return;
-        }
-        Player player = event.getEntity();
-        if (gameManager.getCurrentStatus() != Status.PLAYING) return;
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onDeath(final PlayerDeathEvent e) {
+        final Player player = e.getEntity();
+        player.spigot().respawn();
         IMinigame currentGame = gameManager.getCurrentGame();
         if (currentGame == null) return;
-        player.spigot().respawn();
         if (GameUtils.isAlive(player)) {
             gameManager.getCurrentGame().eliminatePlayer(player);
-        } else {
-            player.setGameMode(GameMode.SPECTATOR);
-            player.teleport(currentGame.getConfig().getSpectatorSpawn());
         }
     }
 

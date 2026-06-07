@@ -38,10 +38,6 @@ public class QuickHandsGame implements Listener, IMinigame {
      * 用 Set 加速 contains 判定
      */
     private final Set<Player> finishedSet = new LinkedHashSet<>();
-    /**
-     * 按到达顺序记录
-     */
-    private final List<Player> finishedList = new ArrayList<>();
 
     public QuickHandsGame(JavaPlugin plugin, QuickHandsConfig config) {
         this.plugin = plugin;
@@ -89,8 +85,6 @@ public class QuickHandsGame implements Listener, IMinigame {
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
-
-
     }
 
     @Override
@@ -204,7 +198,6 @@ public class QuickHandsGame implements Listener, IMinigame {
         if (player.getLocation().getY() > config.getWinY()) return;
 
         finishedSet.add(player);
-        finishedList.add(player);
         player.setGameMode(GameMode.SPECTATOR);
 
         Location spectatorSpawn = config.getSpectatorSpawn();
@@ -227,8 +220,7 @@ public class QuickHandsGame implements Listener, IMinigame {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (!GameUtils.isGameActive(this)) return;
-        if (!GameUtils.isAlive(player)) return;
+        if (!GameUtils.isGameActive(this) || !GameUtils.isAlive(player)) return;
         if (event.getFrom().getBlockX() == event.getTo().getBlockX()
                 && event.getFrom().getBlockY() == event.getTo().getBlockY()
                 && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
