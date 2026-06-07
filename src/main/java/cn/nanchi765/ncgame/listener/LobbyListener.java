@@ -75,12 +75,16 @@ public class LobbyListener implements Listener {
         Player player = event.getPlayer();
         if (!event.getAction().toString().contains("RIGHT")) return;
         ItemStack item = event.getItem();
-        if (item != null && item.hasItemMeta() && lobbyConfig.getLobbyItem().hasItemMeta()
-                && item.getItemMeta().hasDisplayName() && lobbyConfig.getLobbyItem().getItemMeta().hasDisplayName()
-                && item.getItemMeta().getDisplayName().equals(lobbyConfig.getLobbyItem().getItemMeta().getDisplayName())) {
+        if (item != null && lobbyConfig.getLobbyItem().isSimilar(item)) {
             event.setCancelled(true);
             LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
         }
+//        if (item != null && item.hasItemMeta() && lobbyConfig.getLobbyItem().hasItemMeta()
+//                && item.getItemMeta().hasDisplayName() && lobbyConfig.getLobbyItem().getItemMeta().hasDisplayName()
+//                && item.getItemMeta().getDisplayName().equals(lobbyConfig.getLobbyItem().getItemMeta().getDisplayName())) {
+//            event.setCancelled(true);
+//            LobbyUtils.sendBungeeServer(player, lobbyConfig.getBungeeServer());
+//        }
     }
 
     @EventHandler

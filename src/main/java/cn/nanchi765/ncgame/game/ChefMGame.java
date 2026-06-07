@@ -87,8 +87,8 @@ public class ChefMGame implements Listener, IMinigame {
             p.teleport(spawn);
             scores.put(p, 0);
             taskIndex.put(p, 0);
-            giveChefSword(p);
-            updateTaskItem(p);
+            p.getInventory().setItem(0, getChefSword());
+            p.getInventory().setItem(TASK_DISPLAY_SLOT, getTaskItem(p));
         }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -165,21 +165,14 @@ public class ChefMGame implements Listener, IMinigame {
         }
     }
 
-    private void giveChefSword(Player p) {
+    private ItemStack getChefSword() {
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
         ItemMeta meta = sword.getItemMeta();
         meta.setDisplayName(ChatColor.GREEN + "厨刀");
         sword.setItemMeta(meta);
-        p.getInventory().setItem(0, sword);
-    }
-
-    // ==================== 厨刀判定 ====================
-
-    private boolean isChefKnife(ItemStack item) {
-        if (item == null || item.getType() != Material.IRON_SWORD) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null || !meta.hasDisplayName()) return false;
-        return ChatColor.stripColor(meta.getDisplayName()).equals("厨刀");
+        meta.spigot().setUnbreakable(true);
+        sword.setItemMeta(meta);
+        return sword;
     }
 
     // ==================== 煤炭补充 ====================
@@ -211,11 +204,10 @@ public class ChefMGame implements Listener, IMinigame {
         }
     }
 
-    private void updateTaskItem(Player p) {
+    private ItemStack getTaskItem(Player p) {
         int idx = taskIndex.getOrDefault(p, 0);
         if (idx >= tasks.size()) {
-            p.getInventory().setItem(TASK_DISPLAY_SLOT, null);
-            return;
+            return new ItemStack(Material.AIR);
         }
         ChefMConfig.Task task = tasks.get(idx);
         ItemStack displayItem = new ItemStack(task.material);
@@ -224,7 +216,7 @@ public class ChefMGame implements Listener, IMinigame {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         displayItem.setItemMeta(meta);
         displayItem.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
-        p.getInventory().setItem(TASK_DISPLAY_SLOT, displayItem);
+        return displayItem;
     }
 
     // ==================== 结算 ====================
@@ -428,20 +420,21 @@ public class ChefMGame implements Listener, IMinigame {
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         if (!isGameActive(this)) return;
 
+        ItemStack dropStack = event.getItemDrop().getItemStack();
+        if (dropStack == null) return;
+
         // 阻止丢弃厨刀
-        if (isChefKnife(event.getItemDrop().getItemStack())) {
+        if (dropStack.isSimilar(getChefSword())) {
             event.setCancelled(true);
             return;
         }
 
-        // 阻止丢弃任务物品
-        ItemStack dropped = event.getItemDrop().getItemStack();
-        if (dropped.hasItemMeta() && dropped.getItemMeta().hasEnchant(Enchantment.DURABILITY)) {
-            Player player = event.getPlayer();
-            ItemStack taskItem = player.getInventory().getItem(TASK_DISPLAY_SLOT);
-            if (taskItem != null && taskItem.isSimilar(dropped)) event.setCancelled(true);
+        // 阻止任务物品
+        if (dropStack.isSimilar(getTaskItem(event.getPlayer()))) {
+            event.setCancelled(true);
         }
     }
+
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
@@ -517,14 +510,15 @@ public class ChefMGame implements Listener, IMinigame {
         scores.put(player, currentScore);
         taskIndex.put(player, idx + 1);
 
-        updateTaskItem(player);
-
         player.sendMessage(ChatColor.GREEN + "提交成功！当前分数: " + currentScore);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
         String completeMsg = ChatColor.GREEN + player.getName() + " "
                 + ChatColor.AQUA + "完成了 " + ChatColor.RED + task.getDisplayName()
                 + ChatColor.AQUA + "！";
+        
+        player.getInventory().setItem(TASK_DISPLAY_SLOT, getTaskItem(player));
+        
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", completeMsg, 10, 70, 10);
         }

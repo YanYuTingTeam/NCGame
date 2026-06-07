@@ -83,8 +83,9 @@ public class PrepareListener implements Listener {
 
     @EventHandler
     public void onDropItem(PlayerDropItemEvent event) {
-        if (gameManager.getCurrentStatus() != Status.WAITING) return;
-        event.setCancelled(true);
+        if (gameManager.getCurrentStatus() != Status.PLAYING) {
+            event.setCancelled(true);
+        }
     }
 
 }
