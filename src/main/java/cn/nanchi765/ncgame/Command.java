@@ -22,13 +22,13 @@ public class Command implements CommandExecutor {
             showHelp(sender);
             return true;
         }
+        if (!sender.hasPermission("ncgame.admin")) {
+            sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");
+            return true;
+        }
         GameManager gameManager = plugin.getGameManager();
         switch (args[0].toLowerCase()) {
             case "setcountdown":
-                if (!sender.hasPermission("ncgame.admin")) {
-                    sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");
-                    return true;
-                }
                 if (args.length < 2) {
                     sender.sendMessage(ChatColor.RED + "用法: /ncgame setcountdown <秒数>");
                     return true;
@@ -52,10 +52,6 @@ public class Command implements CommandExecutor {
                 }
                 break;
             case "reload":
-                if (!sender.hasPermission("ncgame.admin")) {
-                    sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");
-                    return true;
-                }
                 break;
             case "enable":
                 if (args.length < 2) {
@@ -82,17 +78,6 @@ public class Command implements CommandExecutor {
             case "list":
                 listGames(sender);
                 break;
-            case "sb":
-                if (args.length > 1 && args[1].equalsIgnoreCase("reload")) {
-                    if (!sender.hasPermission("ncgame.admin")) {
-                        sender.sendMessage(ChatColor.RED + "你没有权限执行此操作。");
-                        return true;
-                    }
-                    reloadScoreboard(sender);
-                } else {
-                    sender.sendMessage(ChatColor.RED + "用法: /ncgame sb reload");
-                }
-                break;
             default:
                 showHelp(sender);
                 break;
@@ -102,15 +87,16 @@ public class Command implements CommandExecutor {
 
     private void showHelp(CommandSender sender) {
         sender.sendMessage(ChatColor.GOLD + "========== NCGame 小游戏派对 ==========");
-        sender.sendMessage(ChatColor.WHITE + "作者: " + ChatColor.AQUA + "nanchi765");
+        sender.sendMessage(ChatColor.WHITE + "作者: " + ChatColor.AQUA + "NanChi765");
         sender.sendMessage(ChatColor.WHITE + "版本: " + ChatColor.AQUA + plugin.getDescription().getVersion());
-        sender.sendMessage(ChatColor.WHITE + "介绍: BungeeCord 大厅子服小游戏插件");
-        sender.sendMessage(ChatColor.YELLOW + "指令帮助:");
-        sender.sendMessage(ChatColor.GREEN + "/ncgame reload " + ChatColor.WHITE + "- 重启插件");
-        sender.sendMessage(ChatColor.GREEN + "/ncgame enable <游戏> " + ChatColor.WHITE + "- 启用游戏");
-        sender.sendMessage(ChatColor.GREEN + "/ncgame disable <游戏> " + ChatColor.WHITE + "- 禁用游戏");
-        sender.sendMessage(ChatColor.GREEN + "/ncgame list " + ChatColor.WHITE + "- 列出所有游戏");
-        sender.sendMessage(ChatColor.GREEN + "/ncgame sb reload " + ChatColor.WHITE + "- 重载计分板配置");
+        sender.sendMessage(ChatColor.WHITE + "Refactor By " + ChatColor.AQUA + "YukiEnd");
+        if (!sender.hasPermission("ncgame.admin")) {
+            sender.sendMessage(ChatColor.YELLOW + "指令帮助:");
+            sender.sendMessage(ChatColor.GREEN + "/ncgame reload " + ChatColor.WHITE + "- 重启插件");
+            sender.sendMessage(ChatColor.GREEN + "/ncgame enable <游戏> " + ChatColor.WHITE + "- 启用游戏");
+            sender.sendMessage(ChatColor.GREEN + "/ncgame disable <游戏> " + ChatColor.WHITE + "- 禁用游戏");
+            sender.sendMessage(ChatColor.GREEN + "/ncgame list " + ChatColor.WHITE + "- 列出所有游戏");
+        }
     }
 
     private void setGameStatus(CommandSender sender, String gameName, boolean enable) {
@@ -139,10 +125,5 @@ public class Command implements CommandExecutor {
             String status = enabled ? ChatColor.GREEN + "✔ 开启" : ChatColor.RED + "✘ 关闭";
             sender.sendMessage(ChatColor.WHITE + name + " : " + status);
         }
-    }
-
-    private void reloadScoreboard(CommandSender sender) {
-        plugin.getLobbyConfig().reload();
-        sender.sendMessage(ChatColor.GREEN + "计分板配置已重新加载！");
     }
 }

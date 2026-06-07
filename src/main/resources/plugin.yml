@@ -1,8 +1,7 @@
 name: NCGame
 version: 2.1.5
 main: cn.nanchi765.ncgame.NCGame
-author: nanchi765
-description: BungeeCord 大厅小游戏插件，包含掘一死战、眼疾手快、极限雷区等 11 款游戏，支持积分数据库等。
+author: NnaChi765, YukiEnd
 depend: [Multiverse-Core]
 
 commands:
