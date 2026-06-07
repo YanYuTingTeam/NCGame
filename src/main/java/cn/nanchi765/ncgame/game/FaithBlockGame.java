@@ -264,7 +264,7 @@ public class FaithBlockGame implements Listener, IMinigame {
         if (!GameUtils.isGameActive(this)) return;
 
         Player player = event.getPlayer();
-        if (player.getLocation().getY() < config.getDeathY()) {
+        if (GameUtils.isAlive(player) && player.getLocation().getY() < config.getDeathY()) {
             eliminatePlayer(player);
         }
     }

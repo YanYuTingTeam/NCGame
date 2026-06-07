@@ -169,7 +169,6 @@ public class ChefMGame implements Listener, IMinigame {
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
         ItemMeta meta = sword.getItemMeta();
         meta.setDisplayName(ChatColor.GREEN + "厨刀");
-        sword.setItemMeta(meta);
         meta.spigot().setUnbreakable(true);
         sword.setItemMeta(meta);
         return sword;
@@ -516,9 +515,9 @@ public class ChefMGame implements Listener, IMinigame {
         String completeMsg = ChatColor.GREEN + player.getName() + " "
                 + ChatColor.AQUA + "完成了 " + ChatColor.RED + task.getDisplayName()
                 + ChatColor.AQUA + "！";
-        
+
         player.getInventory().setItem(TASK_DISPLAY_SLOT, getTaskItem(player));
-        
+
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", completeMsg, 10, 70, 10);
         }

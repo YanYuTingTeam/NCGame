@@ -234,11 +234,9 @@ public class SnowSpleefGame implements Listener, IMinigame {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         if (!GameUtils.isGameActive(this)) return;
-
         Player player = event.getPlayer();
-        if (!GameUtils.isAlive(player)) return;
 
-        if (player.getLocation().getY() < config.getDeathY()) {
+        if (GameUtils.isAlive(player) && player.getLocation().getY() < config.getDeathY()) {
             eliminatePlayer(player);
         }
     }

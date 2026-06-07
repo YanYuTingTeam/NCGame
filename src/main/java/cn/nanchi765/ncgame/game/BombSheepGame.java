@@ -3,6 +3,7 @@ package cn.nanchi765.ncgame.game;
 import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.BombSheepConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
+import cn.nanchi765.ncgame.utils.GameUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -182,12 +183,8 @@ public class BombSheepGame implements Listener, IMinigame {
     public void onMove(PlayerMoveEvent event) {
         if (!isGameActive(this)) return;
         Player player = event.getPlayer();
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-
-        if (alivePlayers.contains(player)) {
-            if (player.getLocation().getY() < config.getDeathY()) {
-                eliminatePlayer(player);
-            }
+        if (GameUtils.isAlive(player) && player.getLocation().getY() < config.getDeathY()) {
+            eliminatePlayer(player);
         }
     }
 
