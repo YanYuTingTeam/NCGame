@@ -210,7 +210,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     @EventHandler
     public void onToggleFlight(PlayerToggleFlightEvent event) {
         Player player = event.getPlayer();
-        if (!GameUtils.isGameActive(this)) return;
         if (!GameUtils.isAlive(player)) return;
 
         GameMode mode = player.getGameMode();

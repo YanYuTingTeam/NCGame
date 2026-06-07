@@ -63,9 +63,9 @@ public class NCGame extends JavaPlugin {
         gameManager = new GameManager(this);
         scoreBoardManager = new ScoreBoardManager(this, gameManager, lobbyConfig);
 
+        getServer().getPluginManager().registerEvents(new MOTDListener(), this);
         getServer().getPluginManager().registerEvents(new PlayingListener(), this);
         getServer().getPluginManager().registerEvents(new LobbyListener(), this);
-        getServer().getPluginManager().registerEvents(new MOTDListener(), this);
         getServer().getPluginManager().registerEvents(new PrepareListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
