@@ -185,11 +185,8 @@ public class ChefMGame implements Listener, IMinigame {
     // ==================== 煤炭补充 ====================
 
     private void ensureFurnaceCoal(Furnace furnace) {
-        ItemStack fuel = furnace.getInventory().getFuel();
-        if (fuel == null || fuel.getType() == Material.AIR) {
-            furnace.getInventory().setFuel(new ItemStack(Material.COAL, 64));
-            furnace.update(true);
-        }
+        furnace.getInventory().setFuel(new ItemStack(Material.COAL, 64));
+        furnace.update(true);
     }
 
     // ==================== 箱子逻辑 ====================
@@ -212,15 +209,6 @@ public class ChefMGame implements Listener, IMinigame {
             ItemStack item = cc.items.get(random.nextInt(cc.items.size())).clone();
             inv.setItem(emptySlots.get(i), item);
         }
-    }
-
-    private boolean isInventoryEmpty(Inventory inv) {
-        for (ItemStack item : inv.getContents()) {
-            if (item != null && item.getType() != Material.AIR) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void updateTaskItem(Player p) {

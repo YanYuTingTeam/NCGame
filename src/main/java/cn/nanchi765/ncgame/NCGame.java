@@ -70,13 +70,13 @@ public class NCGame extends JavaPlugin {
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
         for (World world : Bukkit.getWorlds()) {
-            world.setGameRuleValue("announceAdvancements","false");
+            world.setGameRuleValue("announceAdvancements", "false");
             world.setGameRuleValue("doDaylightCycle", "false");
             world.setGameRuleValue("doWeatherCycle", "false");
             world.setGameRuleValue("doFireTick", "false");
             world.setTime(6000);
         }
-        
+
         worldResetManager = new WorldResetManager(this);
         // 开服时重置所有游戏世界（如果已有备份则恢复，否则保持原样）
         resetAllGameWorlds();
