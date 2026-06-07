@@ -3,10 +3,10 @@ package cn.nanchi765.ncgame;
 import cn.nanchi765.ncgame.config.EnableGameConfig;
 import cn.nanchi765.ncgame.config.LobbyConfig;
 import cn.nanchi765.ncgame.config.game.*;
-import cn.nanchi765.ncgame.listener.InGameListener;
 import cn.nanchi765.ncgame.listener.LobbyListener;
 import cn.nanchi765.ncgame.listener.MOTDListener;
-import cn.nanchi765.ncgame.listener.WaitingListener;
+import cn.nanchi765.ncgame.listener.PlayingListener;
+import cn.nanchi765.ncgame.listener.PrepareListener;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.PlayerDataManager;
 import cn.nanchi765.ncgame.manager.ScoreBoardManager;
@@ -63,10 +63,10 @@ public class NCGame extends JavaPlugin {
         gameManager = new GameManager(this);
         scoreBoardManager = new ScoreBoardManager(this, gameManager, lobbyConfig);
 
-        getServer().getPluginManager().registerEvents(new InGameListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayingListener(), this);
         getServer().getPluginManager().registerEvents(new LobbyListener(), this);
         getServer().getPluginManager().registerEvents(new MOTDListener(), this);
-        getServer().getPluginManager().registerEvents(new WaitingListener(), this);
+        getServer().getPluginManager().registerEvents(new PrepareListener(), this);
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
         for (World world : Bukkit.getWorlds()) {

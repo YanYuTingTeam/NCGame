@@ -11,13 +11,21 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
-public class InGameListener implements Listener {
+public class PlayingListener implements Listener {
+
+    private final GameManager gameManager;
+
+    public PlayingListener() {
+        NCGame plugin = NCGame.getInstance();
+        gameManager = plugin.getGameManager();
+    }
 
     @EventHandler
     public void onFoodChange(FoodLevelChangeEvent event) {
@@ -31,12 +39,18 @@ public class InGameListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.PLAYING) return;
         if (gameManager.getCurrentGame() == null) return;
 
         Player player = event.getPlayer();
         gameManager.removePlayer(player);
+    }
+
+    @EventHandler
+    public void onFallDamage(EntityDamageEvent event) {
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            event.setCancelled(true);
+        }
     }
 
 //        @EventHandler
@@ -53,13 +67,13 @@ public class InGameListener implements Listener {
 //            }
 //        }
 
+    // 防止神秘死亡
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         if (event.getEntity() == null) {
             return;
         }
         Player player = event.getEntity();
-        GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.PLAYING) return;
         IMinigame currentGame = gameManager.getCurrentGame();
         if (currentGame == null) return;
@@ -72,10 +86,10 @@ public class InGameListener implements Listener {
         }
     }
 
+    // 重生后旁观者模式
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
-        GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.PLAYING) return;
         IMinigame currentGame = gameManager.getCurrentGame();
         if (currentGame == null) return;
@@ -85,9 +99,9 @@ public class InGameListener implements Listener {
         }
     }
 
+    // 旁观者移动
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        GameManager gameManager = NCGame.getInstance().getGameManager();
         if (gameManager.getCurrentStatus() != Status.PLAYING) return;
         if (gameManager.getCurrentGame() == null) return;
 

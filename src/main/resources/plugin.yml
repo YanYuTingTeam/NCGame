@@ -1,7 +1,7 @@
 name: NCGame
 version: 2.1.5
 main: cn.nanchi765.ncgame.NCGame
-author: NnaChi765, YukiEnd
+author: NnaChi765, YukiEnd, AerMini
 depend: [Multiverse-Core]
 
 commands:

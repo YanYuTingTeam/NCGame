@@ -10,15 +10,16 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 
-public class WaitingListener implements Listener {
+public class PrepareListener implements Listener {
 
     private final GameManager gameManager;
 
-    public WaitingListener() {
+    public PrepareListener() {
         NCGame plugin = NCGame.getInstance();
         gameManager = plugin.getGameManager();
     }
@@ -78,6 +79,12 @@ public class WaitingListener implements Listener {
         if (gameManager.getCurrentStatus() != Status.PLAYING) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void onDropItem(PlayerDropItemEvent event) {
+        if (gameManager.getCurrentStatus() != Status.WAITING) return;
+        event.setCancelled(true);
     }
 
 }

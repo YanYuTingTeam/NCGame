@@ -89,8 +89,8 @@ public class Command implements CommandExecutor {
         sender.sendMessage(ChatColor.GOLD + "========== NCGame 小游戏派对 ==========");
         sender.sendMessage(ChatColor.WHITE + "作者: " + ChatColor.AQUA + "NanChi765");
         sender.sendMessage(ChatColor.WHITE + "版本: " + ChatColor.AQUA + plugin.getDescription().getVersion());
-        sender.sendMessage(ChatColor.WHITE + "Refactor By " + ChatColor.AQUA + "YukiEnd");
-        if (!sender.hasPermission("ncgame.admin")) {
+        sender.sendMessage(ChatColor.WHITE + "Refactored By " + ChatColor.AQUA + "YukiEnd, AerMini");
+        if (sender.hasPermission("ncgame.admin")) {
             sender.sendMessage(ChatColor.YELLOW + "指令帮助:");
             sender.sendMessage(ChatColor.GREEN + "/ncgame reload " + ChatColor.WHITE + "- 重启插件");
             sender.sendMessage(ChatColor.GREEN + "/ncgame enable <游戏> " + ChatColor.WHITE + "- 启用游戏");

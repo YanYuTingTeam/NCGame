@@ -14,7 +14,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -213,13 +212,6 @@ public class OneHitKillGame implements Listener, IMinigame {
 
         // 淘汰由 eliminatePlayer 手动处理，取消所有伤害事件
         event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onFallDamage(EntityDamageEvent event) {
-        if (GameUtils.isGameActive(this) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-            event.setCancelled(true);
-        }
     }
 
     @EventHandler

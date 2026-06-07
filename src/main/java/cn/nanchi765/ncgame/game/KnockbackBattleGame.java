@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
@@ -255,17 +254,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
             } else {
                 event.setCancelled(true);
             }
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onFallDamage(EntityDamageEvent event) {
-        if (!GameUtils.isGameActive(this)) return;
-        if (!(event.getEntity() instanceof Player)) return;
-
-        Player player = (Player) event.getEntity();
-        if (GameUtils.isAlive(player) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-            event.setCancelled(true);
         }
     }
 
