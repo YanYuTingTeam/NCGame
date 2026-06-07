@@ -80,8 +80,7 @@ public class PlayingListener implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                player.setGameMode(GameMode.SPECTATOR);
-                player.teleport(currentGame.getConfig().getSpectatorSpawn());
+                player.spigot().respawn();
             }
         }.runTaskLater(NCGame.getInstance(), 3L);
     }

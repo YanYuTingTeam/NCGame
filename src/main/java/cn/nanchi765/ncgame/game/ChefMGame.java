@@ -41,6 +41,7 @@ public class ChefMGame implements Listener, IMinigame {
     // ==================== 常量 ====================
 
     private static final String ANIMAL_NAME_PREFIX = "chef_";
+    private static final int CHEF_SWORD_SLOT = 0;
     private static final int TASK_DISPLAY_SLOT = 8;
     /**
      * 名次 -> 积分 (index 1-based)
@@ -87,7 +88,7 @@ public class ChefMGame implements Listener, IMinigame {
             p.teleport(spawn);
             scores.put(p, 0);
             taskIndex.put(p, 0);
-            p.getInventory().setItem(0, getChefSword());
+            p.getInventory().setItem(CHEF_SWORD_SLOT, getChefSword());
             p.getInventory().setItem(TASK_DISPLAY_SLOT, getTaskItem(p));
         }
 
@@ -307,11 +308,16 @@ public class ChefMGame implements Listener, IMinigame {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
+        if (event.getClick() == ClickType.NUMBER_KEY && (event.getHotbarButton() == TASK_DISPLAY_SLOT || event.getHotbarButton() == CHEF_SWORD_SLOT)) {
+            event.setCancelled(true);
+            return;
+        }
         ItemStack item = event.getCurrentItem();
         if (item == null) return;
         // 锁定任务展示格
         if (item.isSimilar(getTaskItem(player)) || item.isSimilar(getChefSword())) {
             event.setCancelled(true);
+            return;
         }
         if (event.getClickedInventory() == null) return;
 

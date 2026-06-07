@@ -181,8 +181,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        if (!GameUtils.isGameActive(this)) return;
-
         Player player = event.getPlayer();
         if (!GameUtils.isAlive(player)) return;
 
