@@ -99,12 +99,12 @@ public class GameManager {
      * 玩家断开连接
      */
     public void removePlayer(Player player) {
+        if (currentGame != null && GameUtils.isAlive(player)) {
+            currentGame.eliminatePlayer(player);
+        }
         players.remove(player);
         alivePlayers.remove(player);
         playerScores.remove(player.getUniqueId());
-        if (currentGame != null && GameUtils.isAlive(player)) {
-            eliminatePlayer(player);
-        }
     }
 
     /**

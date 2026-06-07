@@ -49,10 +49,10 @@ public class GameUtils {
             return false;
         }
 
-        Bukkit.broadcastMessage(ChatColor.RED + "人数不足，本轮游戏取消，返回大厅...");
         GameManager gameManager = NCGame.getInstance().getGameManager();
         gameManager.getPendingGames().clear();
         gameManager.onMinigameEnd();
+        Bukkit.broadcastMessage(ChatColor.RED + "人数不足，本轮游戏取消，返回大厅...");
         gameManager.getPlayers().forEach(LobbyUtils::teleportToLobby);
         return true;
     }

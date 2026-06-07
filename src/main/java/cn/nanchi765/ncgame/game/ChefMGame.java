@@ -57,7 +57,6 @@ public class ChefMGame implements Listener, IMinigame {
     private final List<ChefMConfig.ChestConfig> chestConfigs;
     private final Map<Player, Integer> scores = new HashMap<>();
     private final Map<Player, Integer> taskIndex = new HashMap<>();
-    //private final Map<Location, BukkitTask> chestTasks = new HashMap<>();
     private final Map<Location, Player> furnaceUsers = new HashMap<>();
     private final Map<Location, ChefMConfig.ChestConfig> chestConfigMap = new HashMap<>();
     private final Map<Location, ItemStack[]> chestSnapshots = new HashMap<>();
@@ -110,14 +109,11 @@ public class ChefMGame implements Listener, IMinigame {
 
     @Override
     public void end() {
-        //chestTasks.values().forEach(BukkitTask::cancel);
-        //chestTasks.clear();
         furnaceUsers.clear();
         chestConfigMap.clear();
         chestSnapshots.clear();
         announceResults();
         HandlerList.unregisterAll(this);
-
     }
 
     private void spawnVillagers() {
@@ -126,7 +122,7 @@ public class ChefMGame implements Listener, IMinigame {
             Villager villager = (Villager) loc.getWorld().spawnEntity(loc, EntityType.VILLAGER);
             villager.setRemoveWhenFarAway(false);
             villager.setAdult();
-            villager.setCustomName("§2美食家");
+            villager.setCustomName("§2§l美食家");
         }
     }
 
@@ -166,29 +162,8 @@ public class ChefMGame implements Listener, IMinigame {
             chest.update();
             chestConfigMap.put(loc, cc);
             refillChest(cc, chest.getBlockInventory());
-            //startChestRefillTask(cc, loc);
         }
     }
-
-    //private void startChestRefillTask(ChefMConfig.ChestConfig cc, Location loc) {
-    //    BukkitTask task = new BukkitRunnable() {
-    //        @Override
-    //        public void run() {
-    //            if (isGameActive(ChefMGame.this)) {
-    //                this.cancel();
-    //                return;
-    //            }
-    //            Block b = loc.getBlock();
-    //            if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
-    //                Chest c = (Chest) b.getState();
-    //                if (isInventoryEmpty(c.getBlockInventory())) {
-    //                    refillChest(cc, c.getBlockInventory());
-    //                }
-    //            }
-    //        }
-    //    }.runTaskTimer(plugin, 0, cc.refillDelay);
-    //    chestTasks.put(loc, task);
-    //}
 
     private void giveChefSword(Player p) {
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
@@ -196,6 +171,25 @@ public class ChefMGame implements Listener, IMinigame {
         meta.setDisplayName(ChatColor.GREEN + "厨刀");
         sword.setItemMeta(meta);
         p.getInventory().setItem(0, sword);
+    }
+
+    // ==================== 厨刀判定 ====================
+
+    private boolean isChefKnife(ItemStack item) {
+        if (item == null || item.getType() != Material.IRON_SWORD) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) return false;
+        return ChatColor.stripColor(meta.getDisplayName()).equals("厨刀");
+    }
+
+    // ==================== 煤炭补充 ====================
+
+    private void ensureFurnaceCoal(Furnace furnace) {
+        ItemStack fuel = furnace.getInventory().getFuel();
+        if (fuel == null || fuel.getType() == Material.AIR) {
+            furnace.getInventory().setFuel(new ItemStack(Material.COAL, 64));
+            furnace.update(true);
+        }
     }
 
     // ==================== 箱子逻辑 ====================
@@ -326,14 +320,16 @@ public class ChefMGame implements Listener, IMinigame {
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
         if (!isGameActive(this)) return;
-        if (event instanceof EntityDamageByEntityEvent) return; // 交给专门处理器
+        if (event instanceof EntityDamageByEntityEvent) return;
         event.setCancelled(true);
     }
 
-    // 锁定第8格
+    // 背包锁定
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
+
+        // 锁定任务展示格
         if (event.getClickedInventory() == player.getInventory() && event.getSlot() == TASK_DISPLAY_SLOT) {
             event.setCancelled(true);
         }
@@ -341,27 +337,47 @@ public class ChefMGame implements Listener, IMinigame {
                 && event.getHotbarButton() == TASK_DISPLAY_SLOT) {
             event.setCancelled(true);
         }
+
+        // 禁止从熔炉燃料槽取出煤炭
+        if (isGameActive(this)
+                && event.getClickedInventory() != null
+                && event.getClickedInventory().getHolder() instanceof Furnace
+                && event.getSlot() == 1) {
+            ItemStack item = event.getCurrentItem();
+            if (item != null && item.getType() == Material.COAL) {
+                event.setCancelled(true);
+            }
+        }
     }
 
     @EventHandler
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!isGameActive(this)) return;
         if (!(event.getPlayer() instanceof Player)) return;
+
         if (event.getInventory().getHolder() instanceof Chest) {
             Chest chest = (Chest) event.getInventory().getHolder();
             Location loc = chest.getBlock().getLocation();
             if (chestConfigMap.containsKey(loc)) chestSnapshots.put(loc, event.getInventory().getContents().clone());
         }
-        if (config.isFurnaceLockEnabled() && event.getInventory().getHolder() instanceof Furnace) {
+
+        if (event.getInventory().getHolder() instanceof Furnace) {
             Furnace furnace = (Furnace) event.getInventory().getHolder();
             Location loc = furnace.getBlock().getLocation();
-            Player currentUser = furnaceUsers.get(loc);
-            if (currentUser != null && currentUser.isOnline() && !currentUser.equals(event.getPlayer())) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(config.getFurnaceLockMessage());
-                return;
+
+            // 打开熔炉时确保有煤炭
+            ensureFurnaceCoal(furnace);
+
+            // 熔炉锁定逻辑
+            if (config.isFurnaceLockEnabled()) {
+                Player currentUser = furnaceUsers.get(loc);
+                if (currentUser != null && currentUser.isOnline() && !currentUser.equals(event.getPlayer())) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage(config.getFurnaceLockMessage());
+                    return;
+                }
+                furnaceUsers.put(loc, (Player) event.getPlayer());
             }
-            furnaceUsers.put(loc, (Player) event.getPlayer());
         }
     }
 
@@ -369,6 +385,8 @@ public class ChefMGame implements Listener, IMinigame {
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!isGameActive(this)) return;
         if (!(event.getPlayer() instanceof Player)) return;
+
+        // 熔炉关闭：释放锁定 + 补充煤炭
         if (event.getInventory().getHolder() instanceof Furnace) {
             Furnace furnace = (Furnace) event.getInventory().getHolder();
             Location loc = furnace.getBlock().getLocation();
@@ -376,27 +394,12 @@ public class ChefMGame implements Listener, IMinigame {
             if (currentUser != null && currentUser.equals(event.getPlayer())) {
                 furnaceUsers.remove(loc);
             }
+            // 关闭时补充煤炭
+            ensureFurnaceCoal(furnace);
         }
-        // 延迟1秒刷箱子
+
+        // 箱子关闭后：内容变化则延迟刷新
         Inventory inv = event.getInventory();
-        //if (inv.getHolder() instanceof Chest) {
-        //    Chest chest = (Chest) inv.getHolder();
-        //    Location loc = chest.getBlock().getLocation();
-        //    ChefMConfig.ChestConfig cc = chestConfigMap.get(loc);
-        //    if (cc != null) {
-        //        new BukkitRunnable() {
-        //            @Override
-        //            public void run() {
-        //                if (!isGameActive(ChefMGame.this)) return;
-        //                Block b = loc.getBlock();
-        //                if (b.getType() == Material.CHEST && b.getState() instanceof Chest) {
-        //                    Chest c = (Chest) b.getState();
-        //                    refillChest(cc, c.getBlockInventory());
-        //                }
-        //            }
-        //        }.runTaskLater(plugin, 20L);
-        //    }
-        //}
         if (inv.getHolder() instanceof Chest) {
             Chest chest = (Chest) inv.getHolder();
             Location loc = chest.getBlock().getLocation();
@@ -418,7 +421,6 @@ public class ChefMGame implements Listener, IMinigame {
                 }
             }
         }
-
     }
 
     private boolean contentsEqual(ItemStack[] a, ItemStack[] b) {
@@ -433,9 +435,18 @@ public class ChefMGame implements Listener, IMinigame {
         return true;
     }
 
+    // 阻止丢弃物品
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         if (!isGameActive(this)) return;
+
+        // 阻止丢弃厨刀
+        if (isChefKnife(event.getItemDrop().getItemStack())) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // 阻止丢弃任务物品
         ItemStack dropped = event.getItemDrop().getItemStack();
         if (dropped.hasItemMeta() && dropped.getItemMeta().hasEnchant(Enchantment.DURABILITY)) {
             Player player = event.getPlayer();
@@ -443,7 +454,6 @@ public class ChefMGame implements Listener, IMinigame {
             if (taskItem != null && taskItem.isSimilar(dropped)) event.setCancelled(true);
         }
     }
-
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
@@ -468,7 +478,6 @@ public class ChefMGame implements Listener, IMinigame {
                         config.getAnimalRegionPos1(), config.getAnimalRegionPos2());
                 if (bounds == null) return;
 
-                // 使用 getNearbyEntities 代替遍历全服实体，性能显著提升
                 long current = bounds.getNearbyEntities().stream()
                         .filter(e -> e.getType() == type
                                 && e.isValid() && !e.isDead()
@@ -577,10 +586,6 @@ public class ChefMGame implements Listener, IMinigame {
 
     // ==================== 区域辅助类 ====================
 
-    /**
-     * 封装区域边界计算与实体查询，消除 4 处重复的 min/max 计算代码。
-     * 利用 getNearbyEntities 替代全服实体遍历，性能更优。
-     */
     private static class RegionBounds {
         final World world;
         final double minX, maxX, minY, maxY, minZ, maxZ;
@@ -607,9 +612,6 @@ public class ChefMGame implements Listener, IMinigame {
                     minZ + random.nextDouble() * (maxZ - minZ));
         }
 
-        /**
-         * 利用 Bukkit 的空间索引获取区域附近的实体，比 world.getEntities() 全量遍历快一个数量级
-         */
         Collection<Entity> getNearbyEntities() {
             Location center = new Location(world,
                     (minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);

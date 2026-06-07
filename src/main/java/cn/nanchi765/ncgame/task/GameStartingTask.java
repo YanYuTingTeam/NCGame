@@ -75,9 +75,6 @@ public class GameStartingTask implements Runnable {
     }
 
     public void cancel() {
-        for (Player p : gameManager.getPlayers()) {
-            p.sendMessage(ChatColor.RED + "人数不足，倒计时取消");
-        }
         task.cancel();
         gameManager.setGameStartingTask(null);
     }

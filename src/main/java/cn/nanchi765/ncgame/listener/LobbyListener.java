@@ -6,6 +6,7 @@ import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.task.GameStartingTask;
 import cn.nanchi765.ncgame.utils.LobbyUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -60,6 +61,9 @@ public class LobbyListener implements Listener {
         NCGame.getInstance().getScoreBoardManager().removeScoreBoard(player);
         // 人数离开 没达到人数 取消倒计时
         if (gameManager.getGameStartingTask() != null && gameManager.getPlayers().size() < lobbyConfig.getMinPlayers()) {
+            for (Player p : gameManager.getPlayers()) {
+                p.sendMessage(ChatColor.RED + "人数不足，倒计时取消");
+            }
             gameManager.getGameStartingTask().cancel();
         }
     }

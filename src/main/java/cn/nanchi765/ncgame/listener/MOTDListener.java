@@ -7,14 +7,15 @@ import org.bukkit.event.server.ServerListPingEvent;
 
 public class MOTDListener implements Listener {
 
+    private final int maxPlayer = 16;
+
     @EventHandler
     public void onPinged(ServerListPingEvent event) {
-        if (NCGame.getInstance().getGameManager().getPlayers().size() > 16) {
+        event.setMaxPlayers(maxPlayer);
+        if (NCGame.getInstance().getGameManager().getPlayers().size() > maxPlayer) {
             event.setMotd("Full!");
             return;
         }
-
-
         event.setMotd("Waiting...");
     }
 }
