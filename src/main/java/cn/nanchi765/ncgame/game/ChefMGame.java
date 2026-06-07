@@ -19,6 +19,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -270,8 +271,13 @@ public class ChefMGame implements Listener, IMinigame {
 
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        Entity entity = event.getEntity();
         // 村民永远无敌
-        if (event.getEntity() instanceof Villager) {
+        if (entity instanceof Villager) {
+            event.setCancelled(true);
+            return;
+        }
+        if (entity instanceof ItemFrame) {
             event.setCancelled(true);
             return;
         }
@@ -282,7 +288,7 @@ public class ChefMGame implements Listener, IMinigame {
         }
 
         // 游戏中：玩家不可被任何东西伤害
-        if (event.getEntity() instanceof Player) {
+        if (entity instanceof Player) {
             event.setCancelled(true);
             return;
         }
@@ -601,5 +607,19 @@ public class ChefMGame implements Listener, IMinigame {
             double dz = (maxZ - minZ) / 2 + 1;
             return world.getNearbyEntities(center, dx, dy, dz);
         }
+    }
+
+    // 破坏画或展示框
+    @EventHandler
+    public void onEntityDestroy(HangingBreakByEntityEvent event) {
+        Entity entity = event.getEntity();
+        Entity player = event.getRemover();
+
+        if (!(entity instanceof Painting || entity instanceof ItemFrame && player instanceof Player))
+            return;
+        if (Bukkit.getPlayer(player.getUniqueId()).getGameMode() == GameMode.CREATIVE)
+            return;
+
+        event.setCancelled(true);
     }
 }
