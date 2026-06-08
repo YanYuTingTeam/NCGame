@@ -202,9 +202,7 @@ public class BombSheepGame implements Listener, IMinigame {
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
         if (!isGameActive(this)) return;
-        if (event.getEntity() instanceof Player) {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true);
     }
 
     /**
