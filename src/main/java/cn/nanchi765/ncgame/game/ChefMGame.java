@@ -14,8 +14,6 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -515,16 +513,6 @@ public class ChefMGame implements Listener, IMinigame {
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", completeMsg, 10, 70, 10);
         }
-    }
-
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        if (isGameActive(this)) event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onBlockPlace(BlockPlaceEvent event) {
-        if (isGameActive(this)) event.setCancelled(true);
     }
 
     @Override

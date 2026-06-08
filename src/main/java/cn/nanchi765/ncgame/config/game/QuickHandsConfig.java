@@ -153,4 +153,14 @@ public class QuickHandsConfig implements GameConfig {
     public String subtitle() {
         return "挖到终点，利用工具加快挖掘速度！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return true;
+    }
 }

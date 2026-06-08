@@ -76,7 +76,6 @@ public class SnakeConfig implements GameConfig {
         float pitch = (float) config.getDouble("game.spectator.spawn.pitch", 0.0);
         return new Location(world, x, y, z, yaw, pitch);
     }
-// 在 SnakeConfig 类中添加以下方法
 
     public boolean isBarrierEnabled() {
         return config.getBoolean("game.barrier.enabled", false);
@@ -135,5 +134,15 @@ public class SnakeConfig implements GameConfig {
     @Override
     public String subtitle() {
         return "脚下的方块即将消失，保持移动！";
+    }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
     }
 }

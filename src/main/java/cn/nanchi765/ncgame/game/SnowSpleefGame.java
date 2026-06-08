@@ -13,7 +13,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
@@ -238,13 +237,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
         if (GameUtils.isAlive(player) && player.getLocation().getY() < config.getDeathY()) {
             eliminatePlayer(player);
-        }
-    }
-
-    @EventHandler
-    public void onDamageByEntity(EntityDamageByEntityEvent event) {
-        if (GameUtils.isGameActive(this)) {
-            event.setCancelled(true);
         }
     }
 

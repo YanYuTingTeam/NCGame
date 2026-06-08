@@ -139,4 +139,14 @@ public class CleanupConfig implements GameConfig {
     public String subtitle() {
         return "破坏方块，收集最多积分！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return true;
+    }
 }

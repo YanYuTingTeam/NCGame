@@ -122,4 +122,14 @@ public class SnowSpleefConfig implements GameConfig {
     public String subtitle() {
         return "挖掉或使用雪球打掉雪块，将其他人砸下去！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return true;
+    }
 }

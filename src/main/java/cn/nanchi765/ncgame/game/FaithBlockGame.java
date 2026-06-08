@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -267,12 +266,6 @@ public class FaithBlockGame implements Listener, IMinigame {
         if (GameUtils.isAlive(player) && player.getLocation().getY() < config.getDeathY()) {
             eliminatePlayer(player);
         }
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent event) {
-        if (!GameUtils.isGameActive(this)) return;
-        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)

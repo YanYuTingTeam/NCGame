@@ -154,4 +154,14 @@ public class FaithBlockConfig implements GameConfig {
     public String subtitle() {
         return ChatColor.DARK_GREEN + "地面会变色并消失！" + ChatColor.WHITE + "白->" + ChatColor.YELLOW + "黄->" + ChatColor.GOLD + "橙->" + ChatColor.RED + "红->" + ChatColor.WHITE + "消失";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
+    }
 }

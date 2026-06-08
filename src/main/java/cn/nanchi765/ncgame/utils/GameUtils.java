@@ -18,7 +18,7 @@ public class GameUtils {
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        player.setGameMode(GameMode.ADVENTURE);
+        player.setGameMode(GameMode.SURVIVAL);
         player.setHealth(20);
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
         player.setFoodLevel(20);

@@ -68,6 +68,9 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         for (Player p : gameManager.getAlivePlayers()) {
             p.getInventory().clear();
             p.getInventory().setItem(0, stick);
+            p.setAllowFlight(true);
+            p.setFlying(false);
+            hasDoubleJumped.put(p.getUniqueId(), false);
         }
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -75,11 +78,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void start() {
-        for (Player p : gameManager.getAlivePlayers()) {
-            p.setAllowFlight(true);
-            p.setFlying(false);
-            hasDoubleJumped.put(p.getUniqueId(), false);
-        }
     }
 
     @Override
@@ -250,20 +248,16 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @EventHandler(ignoreCancelled = true)
     public void onDamageByEntity(EntityDamageByEntityEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player) || !(event.getDamager() instanceof Player)) return;
 
         if (!GameUtils.isGameActive(this)) return;
 
         Player victim = (Player) event.getEntity();
-        Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
-
-        if (event.getDamager() instanceof Player) {
-            Player attacker = (Player) event.getDamager();
-            if (aliveSet.contains(victim) && aliveSet.contains(attacker)) {
-                event.setDamage(0); // 存活玩家之间只保留击退，取消伤害
-            } else {
-                event.setCancelled(true);
-            }
+        Player attacker = (Player) event.getDamager();
+        if (GameUtils.isAlive(victim) && GameUtils.isAlive(attacker)) {
+            event.setDamage(0); // 存活玩家之间只保留击退，取消伤害
+        } else {
+            event.setCancelled(true);
         }
     }
 

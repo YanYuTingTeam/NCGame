@@ -144,4 +144,14 @@ public class BombSheepConfig implements GameConfig {
     public String subtitle() {
         return "剪羊毛，但要小心炸弹羊！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
+    }
 }

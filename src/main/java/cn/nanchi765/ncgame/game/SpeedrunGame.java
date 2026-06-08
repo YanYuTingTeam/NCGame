@@ -13,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -215,12 +214,6 @@ public class SpeedrunGame implements Listener, IMinigame {
 
         // 胜利区域检测
         checkFinish(player);
-    }
-
-    @EventHandler
-    public void onBlock(BlockBreakEvent event) {
-        if (!GameUtils.isGameActive(this)) return;
-        event.setCancelled(true);
     }
 
     @EventHandler

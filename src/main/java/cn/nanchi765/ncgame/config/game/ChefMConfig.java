@@ -219,6 +219,16 @@ public class ChefMConfig implements GameConfig {
         return "快速烹饪食物交给美食家";
     }
 
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
+    }
+
     public boolean isFurnaceLockEnabled() {
         return config.getBoolean("game.furnace-lock.enabled", true);
     }

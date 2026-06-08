@@ -137,4 +137,14 @@ public class KnockbackBattleConfig implements GameConfig {
     public String subtitle() {
         return "利用击退棍把对手打下平台！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
+    }
 }

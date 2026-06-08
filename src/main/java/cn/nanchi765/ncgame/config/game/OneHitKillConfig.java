@@ -100,4 +100,14 @@ public class OneHitKillConfig implements GameConfig {
     public String subtitle() {
         return "一箭决胜负，活到最后！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
+    }
 }

@@ -149,4 +149,14 @@ public class ExtremeMinefieldConfig implements GameConfig {
     public String subtitle() {
         return "避开压力板陷阱，第一个到达终点！";
     }
+
+    @Override
+    public boolean isCanBuild() {
+        return false;
+    }
+
+    @Override
+    public boolean isCanBreak() {
+        return false;
+    }
 }

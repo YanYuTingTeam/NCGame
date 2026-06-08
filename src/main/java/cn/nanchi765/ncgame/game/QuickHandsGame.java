@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -245,13 +244,6 @@ public class QuickHandsGame implements Listener, IMinigame {
             event.setCancelled(true);
         } else {
             event.setDropItems(false);
-        }
-    }
-
-    @EventHandler
-    public void onDamage(EntityDamageEvent event) {
-        if (GameUtils.isGameActive(this) && event.getEntity() instanceof Player) {
-            event.setCancelled(true);
         }
     }
 }

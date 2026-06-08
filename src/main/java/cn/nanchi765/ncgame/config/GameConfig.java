@@ -21,4 +21,8 @@ public interface GameConfig {
     List<String> getScoreboardLines();
 
     String subtitle();
+
+    boolean isCanBuild();
+
+    boolean isCanBreak();
 }

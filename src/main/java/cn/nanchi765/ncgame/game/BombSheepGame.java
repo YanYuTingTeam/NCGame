@@ -13,9 +13,6 @@ import org.bukkit.entity.Sheep;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
@@ -203,31 +200,11 @@ public class BombSheepGame implements Listener, IMinigame {
     }
 
     @EventHandler
-    public void onDamageByEntity(EntityDamageByEntityEvent event) {
-        if (!isGameActive(this)) return;
-        if (event.getEntity() instanceof Player) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
         if (!isGameActive(this)) return;
         if (event.getEntity() instanceof Player) {
             event.setCancelled(true);
         }
-    }
-
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        if (!isGameActive(this)) return;
-        event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onBlockPlace(BlockPlaceEvent event) {
-        if (!isGameActive(this)) return;
-        event.setCancelled(true);
     }
 
     /**

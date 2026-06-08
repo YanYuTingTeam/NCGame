@@ -11,6 +11,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -48,8 +50,26 @@ public class PlayingListener implements Listener {
     }
 
     @EventHandler
-    public void onFallDamage(EntityDamageEvent event) {
+    public void onDamage(EntityDamageEvent event) {
         if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBuild(BlockPlaceEvent event) {
+        if (event.getPlayer() == null) return;
+        if (gameManager.getCurrentStatus() != Status.PLAYING) return;
+        if (!gameManager.getCurrentGame().getConfig().isCanBuild()) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBreak(BlockBreakEvent event) {
+        if (event.getPlayer() == null) return;
+        if (gameManager.getCurrentStatus() != Status.PLAYING) return;
+        if (!gameManager.getCurrentGame().getConfig().isCanBreak()) {
             event.setCancelled(true);
         }
     }
