@@ -12,6 +12,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -165,6 +166,16 @@ public class CleanupGame implements Listener, IMinigame {
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
         if (GameUtils.isGameActive(this)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInteract(PlayerInteractEvent event) {
+        GameManager gm = NCGame.getInstance().getGameManager();
+        if (gm.getCurrentGame() != this) return;
+        if (event.getClickedBlock() == null) return;
+        if (event.getClickedBlock().getType() == Material.FLOWER_POT) {
             event.setCancelled(true);
         }
     }

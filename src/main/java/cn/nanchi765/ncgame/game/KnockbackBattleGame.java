@@ -40,6 +40,8 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     // 出生点分配记录
     private final Map<UUID, Location> spawnAssignments = new HashMap<>();
 
+    private final Set<UUID> initialPlayers = new HashSet<>();
+
     public KnockbackBattleGame(JavaPlugin plugin, KnockbackBattleConfig config) {
         this.plugin = plugin;
         this.config = config;
@@ -59,8 +61,9 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         // 分配出生点并记录
         for (int i = 0; i < shuffledPlayers.size(); i++) {
             Location loc = spawns.get(i % spawns.size());
-            shuffledPlayers.get(i).teleport(loc);
-            spawnAssignments.put(shuffledPlayers.get(i).getUniqueId(), loc);
+            Player p = shuffledPlayers.get(i);
+            p.teleport(loc);
+            spawnAssignments.put(p.getUniqueId(), loc);
         }
 
         // 发放击退棒
@@ -78,6 +81,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void start() {
+        for (Player p:gameManager.getAlivePlayers()){initialPlayers.add(p.getUniqueId());}
     }
 
     @Override
@@ -85,11 +89,11 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         for (Player p : gameManager.getPlayers()) {
             GameUtils.resetPlayer(p);
         }
+        broadcastRanking();
         lastDoubleJumpTimes.clear();
         hasDoubleJumped.clear();
         spawnAssignments.clear();
-
-        broadcastRanking();
+        initialPlayers.clear();
         HandlerList.unregisterAll(this);
     }
 
@@ -110,11 +114,19 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         List<Player> allPlayers = gameManager.getPlayers();
         Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
 
-        // 分离存活与淘汰玩家
-        List<Player> alivePlayers = new ArrayList<>(aliveSet);
-        List<Player> eliminated = new ArrayList<>();
+        List<Player> gamePlayers = new ArrayList<>();
         for (Player p : allPlayers) {
-            if (!aliveSet.contains(p)) {
+            if (initialPlayers.contains(p.getUniqueId())) {
+                gamePlayers.add(p);
+            }
+        }
+
+        List<Player> alivePlayers = new ArrayList<>();
+        List<Player> eliminated = new ArrayList<>();
+        for (Player p : gamePlayers) {
+            if (aliveSet.contains(p)) {
+                alivePlayers.add(p);
+            } else {
                 eliminated.add(p);
             }
         }
@@ -146,8 +158,8 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         }
 
         // 个人消息
-        for (Player p : allPlayers) {
-            int myRank = playerRank.getOrDefault(p, allPlayers.size());
+        for (Player p : gamePlayers) {
+            int myRank = playerRank.getOrDefault(p, gamePlayers.size());
             int myScore = scoreAdd.getOrDefault(p, 0);
             String suffix = myScore > 0 ? " (+" + myScore + "积分)" : "";
             p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + suffix);

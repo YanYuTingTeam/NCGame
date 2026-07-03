@@ -24,6 +24,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -582,6 +583,19 @@ public class ChefMGame implements Listener, IMinigame {
             double dy = (maxY - minY) / 2 + 1;
             double dz = (maxZ - minZ) / 2 + 1;
             return world.getNearbyEntities(center, dx, dy, dz);
+        }
+    }
+
+    @EventHandler
+    public void onMove(PlayerMoveEvent event) {
+        if (!isGameActive(this)) return;
+        Player player = event.getPlayer();
+        if (!GameUtils.isAlive(player)) return;
+        if (event.getTo().getY() < 0) {
+            Location spawn = config.getSpawnLocation();
+            if (spawn != null) {
+                player.teleport(spawn);
+            }
         }
     }
 

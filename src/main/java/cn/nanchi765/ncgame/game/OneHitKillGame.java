@@ -31,6 +31,7 @@ public class OneHitKillGame implements Listener, IMinigame {
     @Getter
     private final OneHitKillConfig config;
     private final GameManager gameManager;
+    private final List<Player> eliminationOrder = new ArrayList<>();
 
     public OneHitKillGame(JavaPlugin plugin, OneHitKillConfig config) {
         this.plugin = plugin;
@@ -113,24 +114,13 @@ public class OneHitKillGame implements Listener, IMinigame {
             rankings.put(p, 1);
         }
 
-        List<Player> eliminated = getEliminatedPlayers();
+        List<Player> eliminated = new ArrayList<>(eliminationOrder);
         Collections.reverse(eliminated);
         for (Player p : eliminated) {
             rankings.put(p, nextRank++);
         }
 
         return rankings;
-    }
-
-    private List<Player> getEliminatedPlayers() {
-        Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
-        List<Player> eliminated = new ArrayList<>();
-        for (Player p : gameManager.getPlayers()) {
-            if (!aliveSet.contains(p)) {
-                eliminated.add(p);
-            }
-        }
-        return eliminated;
     }
 
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
@@ -174,6 +164,7 @@ public class OneHitKillGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
+        eliminationOrder.add(player);
         String title = ChatColor.AQUA + player.getName() + " 被一箭射杀";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
