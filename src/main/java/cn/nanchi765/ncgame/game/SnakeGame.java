@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.SnakeConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -36,6 +37,7 @@ public class SnakeGame implements Listener, IMinigame {
      */
     private final double deathY;
     private BukkitTask vanishTask;
+    private final List<Player> t = new ArrayList<>();
 
     public SnakeGame(JavaPlugin plugin, SnakeConfig config) {
         this.plugin = plugin;
@@ -115,6 +117,7 @@ public class SnakeGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
+        t.add(player);
         String title = ChatColor.AQUA + player.getName() + " 掉下去了";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
@@ -158,32 +161,7 @@ public class SnakeGame implements Listener, IMinigame {
     // ======================== 结算辅助 ========================
 
     private Map<Player, Integer> buildRankings() {
-        Map<Player, Integer> rankings = new LinkedHashMap<>();
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-
-        int nextRank = alivePlayers.isEmpty() ? 1 : 2;
-        for (Player p : alivePlayers) {
-            rankings.put(p, 1);
-        }
-
-        List<Player> eliminated = getEliminatedPlayers();
-        Collections.reverse(eliminated);
-        for (Player p : eliminated) {
-            rankings.put(p, nextRank++);
-        }
-
-        return rankings;
-    }
-
-    private List<Player> getEliminatedPlayers() {
-        Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
-        List<Player> eliminated = new ArrayList<>();
-        for (Player p : gameManager.getPlayers()) {
-            if (!aliveSet.contains(p)) {
-                eliminated.add(p);
-            }
-        }
-        return eliminated;
+        return RankUtils.buildSurvivalRanking(gameManager.getAlivePlayers(), t);
     }
 
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {

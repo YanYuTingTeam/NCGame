@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.SnowSpleefConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -40,6 +41,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
      * 可破坏方块集合，O(1) 查找
      */
     private final Set<String> breakableBlockSet;
+    private final List<Player> t = new ArrayList<>();
 
     public SnowSpleefGame(JavaPlugin plugin, SnowSpleefConfig config) {
         this.plugin = plugin;
@@ -91,6 +93,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
+        t.add(player);
         String title = ChatColor.AQUA + player.getName() + " 在岩浆里游泳";
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", title, 0, 40, 10);
@@ -123,21 +126,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
     // ======================== 结算辅助 ========================
 
     private Map<Player, Integer> buildRankings() {
-        Map<Player, Integer> rankings = new LinkedHashMap<>();
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-
-        int nextRank = alivePlayers.isEmpty() ? 1 : 2;
-        for (Player p : alivePlayers) {
-            rankings.put(p, 1);
-        }
-
-        List<Player> eliminated = getEliminatedPlayers();
-        Collections.reverse(eliminated);
-        for (Player p : eliminated) {
-            rankings.put(p, nextRank++);
-        }
-
-        return rankings;
+        return RankUtils.buildSurvivalRanking(gameManager.getAlivePlayers(), t);
     }
 
     private List<Player> getEliminatedPlayers() {

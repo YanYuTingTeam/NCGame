@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.FaithBlockConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -44,6 +45,7 @@ public class FaithBlockGame implements Listener, IMinigame {
     // 缓存区域边界，避免每次事件/定时任务重复计算
     private World regionWorld;
     private int minX, maxX, minY, maxY, minZ, maxZ;
+    private final List<Player> t = new ArrayList<>();
 
     public FaithBlockGame(JavaPlugin plugin, FaithBlockConfig config) {
         this.plugin = plugin;
@@ -191,31 +193,7 @@ public class FaithBlockGame implements Listener, IMinigame {
         List<Player> alivePlayers = new ArrayList<>(gameManager.getAlivePlayers());
         List<Player> allPlayers = gameManager.getPlayers();
 
-        // 收集被淘汰的玩家
-        Set<Player> aliveSet = new HashSet<>(alivePlayers);
-        List<Player> eliminated = new ArrayList<>();
-        for (Player p : allPlayers) {
-            if (!aliveSet.contains(p)) {
-                eliminated.add(p);
-            }
-        }
-
-        // 构建排名：存活玩家并列第1，被淘汰玩家按淘汰顺序倒序排列
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        int rank = 1;
-
-        for (Player p : alivePlayers) {
-            playerRank.put(p, rank);
-        }
-        if (!alivePlayers.isEmpty()) {
-            rank = 2;
-        }
-
-        // 最后被淘汰的排名靠前，最早被淘汰的排名靠后
-        Collections.reverse(eliminated);
-        for (Player p : eliminated) {
-            playerRank.put(p, rank++);
-        }
+        Map<Player, Integer> playerRank = RankUtils.buildSurvivalRanking(alivePlayers, t);
 
         // 计算积分并发放
         Map<Player, Integer> scoreAdd = new HashMap<>();
@@ -277,6 +255,7 @@ public class FaithBlockGame implements Listener, IMinigame {
     // ========== 淘汰逻辑 ==========
 
     public void eliminatePlayer(Player player) {
+        t.add(player);
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", ChatColor.AQUA + player.getName() + " 被淘汰了", 0, 40, 10);
         }

@@ -5,6 +5,7 @@ import cn.nanchi765.ncgame.config.game.KnockbackBattleConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -41,6 +42,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     private final Map<UUID, Location> spawnAssignments = new HashMap<>();
 
     private final Set<UUID> initialPlayers = new HashSet<>();
+    private final List<Player> t = new ArrayList<>();
 
     public KnockbackBattleGame(JavaPlugin plugin, KnockbackBattleConfig config) {
         this.plugin = plugin;
@@ -122,31 +124,13 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         }
 
         List<Player> alivePlayers = new ArrayList<>();
-        List<Player> eliminated = new ArrayList<>();
         for (Player p : gamePlayers) {
             if (aliveSet.contains(p)) {
                 alivePlayers.add(p);
-            } else {
-                eliminated.add(p);
             }
         }
 
-        // 构建排名
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        int rank = 1;
-
-        for (Player p : alivePlayers) {
-            playerRank.put(p, rank);
-        }
-        if (!alivePlayers.isEmpty()) {
-            rank = 2;
-        }
-
-        // 后淘汰的排名更靠前
-        Collections.reverse(eliminated);
-        for (Player p : eliminated) {
-            playerRank.put(p, rank++);
-        }
+        Map<Player, Integer> playerRank = RankUtils.buildSurvivalRanking(alivePlayers, t);
 
         // 计算积分并发放
         Map<Player, Integer> scoreAdd = new HashMap<>();
@@ -292,6 +276,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
 
     @Override
     public void eliminatePlayer(Player player) {
+        t.add(player);
         for (Player p : gameManager.getPlayers()) {
             p.sendTitle("", ChatColor.AQUA + player.getName() + " 被击落了", 0, 40, 10);
         }
