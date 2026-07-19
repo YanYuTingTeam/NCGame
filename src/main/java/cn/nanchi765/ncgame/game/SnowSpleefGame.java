@@ -85,7 +85,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
         Map<Player, Integer> scoreMap = calculateScores(rankings);
 
         applyScores(scoreMap);
-        notifyResults(rankings, scoreMap);
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
@@ -94,9 +93,9 @@ public class SnowSpleefGame implements Listener, IMinigame {
     @Override
     public void eliminatePlayer(Player player) {
         t.add(player);
-        String title = ChatColor.AQUA + player.getName() + " 在岩浆里游泳";
+        String title = ChatColor.AQUA + player.getName() + "在岩浆里游泳";
         for (Player p : gameManager.getPlayers()) {
-            p.sendTitle("", title, 0, 40, 10);
+            p.sendTitle("", title, 10, 30, 10);
         }
         gameManager.eliminatePlayer(player);
     }
@@ -142,15 +141,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
         if (!(plugin instanceof NCGame)) return;
         NCGame ncGame = (NCGame) plugin;
         scoreMap.forEach(ncGame::addScore);
-    }
-
-    private void notifyResults(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
-        for (Player p : gameManager.getPlayers()) {
-            int rank = rankings.getOrDefault(p, gameManager.getPlayers().size());
-            int add = scoreMap.getOrDefault(p, 0);
-            String suffix = add > 0 ? " (+" + add + "积分)" : "";
-            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + rank + " 名！" + suffix);
-        }
     }
 
     private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {

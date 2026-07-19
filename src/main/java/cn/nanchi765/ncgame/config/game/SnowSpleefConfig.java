@@ -120,7 +120,7 @@ public class SnowSpleefConfig implements GameConfig {
 
     @Override
     public String subtitle() {
-        return "挖掉或使用雪球打掉雪块，将其他人砸下去！";
+        return "挖掉或使用雪球打掉雪块，将其他人砸下去!";
     }
 
     @Override

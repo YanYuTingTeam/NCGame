@@ -23,7 +23,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-
+import org.bukkit.util.Vector;
 import java.util.*;
 
 import static cn.nanchi765.ncgame.utils.GameUtils.isAlive;
@@ -130,9 +130,6 @@ public class BombSheepGame implements Listener, IMinigame {
         // 发放积分
         addScores(scoreAdd);
 
-        // 向玩家发送个人结果
-        sendPlayerResults(players, alivePlayers, playerRank, scoreAdd);
-
         // 广播排行榜
         broadcastLeaderboard(playerRank, scoreAdd);
 
@@ -234,7 +231,11 @@ public class BombSheepGame implements Listener, IMinigame {
     private void triggerExplosion(Player player, Sheep sheep) {
         player.getWorld().createExplosion(sheep.getLocation(), (float) config.getExplosionPower(), true);
         player.setHealth(Math.max(0, player.getHealth() - config.getExplodeDamage()));
-        player.sendMessage(ChatColor.RED + "炸弹羊爆炸了！你受到了伤害。");
+        Vector dir = player.getLocation().toVector().subtract(sheep.getLocation().toVector());
+        if (dir.lengthSquared() > 0.001) {
+            dir.normalize().multiply(Math.max(1.0, config.getExplosionPower())).setY(0.5);
+            player.setVelocity(dir);
+        }
         sheep.remove();
         activeSheep.remove(sheep);
     }
@@ -291,24 +292,6 @@ public class BombSheepGame implements Listener, IMinigame {
     }
 
     /**
-     * 向所有玩家发送个人结果
-     */
-    private void sendPlayerResults(List<Player> players, List<Player> alivePlayers,
-                                   Map<Player, Integer> playerRank, Map<Player, Integer> scoreAdd) {
-        for (Player p : players) {
-            if (alivePlayers.contains(p)) {
-                int myWool = woolScores.getOrDefault(p, 0);
-                int myRank = playerRank.getOrDefault(p, 0);
-                int myAdd = scoreAdd.getOrDefault(p, 0);
-                String bonus = myAdd > 0 ? " (+" + myAdd + "积分)" : "";
-                p.sendMessage(ChatColor.GREEN + "你收集了 " + myWool + " 个羊毛，第 " + myRank + " 名！" + bonus);
-            } else {
-                p.sendMessage(ChatColor.RED + "你已被淘汰，不参与排名。");
-            }
-        }
-    }
-
-    /**
      * 广播排行榜
      */
     private void broadcastLeaderboard(Map<Player, Integer> playerRank, Map<Player, Integer> scoreAdd) {
@@ -349,9 +332,9 @@ public class BombSheepGame implements Listener, IMinigame {
      */
     @Override
     public void eliminatePlayer(Player player) {
-        String title = ChatColor.AQUA + player.getName() + " 被淘汰了";
+        String title = ChatColor.AQUA + player.getName() + "被炸弹羊送走了";
         for (Player p : gameManager.getPlayers()) {
-            p.sendTitle("", title, 0, 40, 10);
+            p.sendTitle("", title, 10, 30, 10);
         }
         gameManager.eliminatePlayer(player);
     }

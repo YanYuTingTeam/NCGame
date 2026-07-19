@@ -47,7 +47,6 @@ public class GameStartingTask implements Runnable {
                 String subtitle = ChatColor.DARK_GREEN + "小游戏即将启动";
                 for (Player p : gameManager.getPlayers()) {
                     p.sendTitle(title, subtitle, 0, 25, 10);
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
                 }
             }
 

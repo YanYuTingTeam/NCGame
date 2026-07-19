@@ -141,14 +141,6 @@ public class KnockbackBattleGame implements Listener, IMinigame {
             scoreAdd.forEach(ncGame::addScore);
         }
 
-        // 个人消息
-        for (Player p : gamePlayers) {
-            int myRank = playerRank.getOrDefault(p, gamePlayers.size());
-            int myScore = scoreAdd.getOrDefault(p, 0);
-            String suffix = myScore > 0 ? " (+" + myScore + "积分)" : "";
-            p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + suffix);
-        }
-
         // 广播前4名
         RankUtils.broadcastLeaderboard("击退战", playerRank, scoreAdd);
     }
@@ -267,7 +259,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
     public void eliminatePlayer(Player player) {
         t.add(player);
         for (Player p : gameManager.getPlayers()) {
-            p.sendTitle("", ChatColor.AQUA + player.getName() + " 被击落了", 0, 40, 10);
+            p.sendTitle("", ChatColor.AQUA + player.getName() + "被击落了", 10, 30, 10);
         }
         gameManager.eliminatePlayer(player);
     }

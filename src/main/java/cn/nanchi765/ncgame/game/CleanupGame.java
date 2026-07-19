@@ -64,6 +64,7 @@ public class CleanupGame implements Listener, IMinigame {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(name);
+        meta.spigot().setUnbreakable(true);
         item.setItemMeta(meta);
         return item;
     }
@@ -106,14 +107,8 @@ public class CleanupGame implements Listener, IMinigame {
             }
         }
 
-        for (Player p : gameManager.getPlayers()) {
-            int myRank = playerRank.getOrDefault(p, gameManager.getPlayers().size());
-            int myAdd = scoreAdd.getOrDefault(p, 0);
-            int blocks = blockCounts.getOrDefault(p, 0);
-            p.sendMessage(ChatColor.GREEN + "你破坏了 " + blocks + " 个方块，获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
-        }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 大扫除 排行榜 =====");
+        Bukkit.broadcastMessage(" ");
         int count = 0;
         for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
             if (count >= 4) break;
@@ -121,7 +116,7 @@ public class CleanupGame implements Listener, IMinigame {
             int r = entry.getValue();
             int add = scoreAdd.getOrDefault(p, 0);
             int blocks = blockCounts.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (破坏 " + blocks + " 块) (+" + add + "积分)");
+            Bukkit.broadcastMessage("第" + r + "名：" + ChatColor.WHITE + p.getName() + " (破坏 " + blocks + " 块) (+" + add + "积分)");
             count++;
         }
 
@@ -159,7 +154,7 @@ public class CleanupGame implements Listener, IMinigame {
         } else {
             event.setDropItems(false);
             blockCounts.merge(player, 1, Integer::sum);
-            player.sendTitle("", ChatColor.GREEN + "你获得了 " + ChatColor.YELLOW + "1" + ChatColor.GREEN + " 分", 5, 20, 5);
+            player.sendTitle("", ChatColor.GREEN + "你获得了 " + ChatColor.YELLOW + "1" + ChatColor.GREEN + " 分。", 5, 20, 5);
         }
     }
 

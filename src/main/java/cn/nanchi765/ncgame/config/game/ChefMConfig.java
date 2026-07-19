@@ -273,21 +273,23 @@ public class ChefMConfig implements GameConfig {
         private static String getChineseName(Material mat) {
             switch (mat) {
                 case COOKED_RABBIT:
-                    return "烤兔肉";
+                    return "§c§l烤兔肉";
                 case COOKED_CHICKEN:
-                    return "烤鸡肉";
+                    return "§c§l烤鸡肉";
                 case COOKED_FISH:
-                    return "烤鱼";
+                    return "&c&l烤鱼";
                 case BREAD:
-                    return "面包";
+                    return "§9§l面包";
                 case CAKE:
-                    return "蛋糕";
+                    return "§9§l蛋糕";
                 case GRILLED_PORK:
-                    return "烤猪排";
+                    return "§c§l烤猪排";
                 case COOKED_BEEF:
-                    return "烤牛排";
+                    return "§c§l烤牛排";
                 case PUMPKIN_PIE:
-                    return "南瓜派";
+                    return "§9§l南瓜派";
+                case COOKIE:
+                    return "§9§l曲奇饼";
                 default:
                     return mat.toString().toLowerCase().replace('_', ' ');
             }

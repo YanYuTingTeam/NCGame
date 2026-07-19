@@ -91,7 +91,6 @@ public class SpeedrunGame implements Listener, IMinigame {
         Map<Player, Integer> scoreMap = calculateScores(rankings);
 
         applyScores(scoreMap);
-        notifyResults(rankings, scoreMap);
         broadcastLeaderboard(rankings, scoreMap);
 
         HandlerList.unregisterAll(this);
@@ -130,19 +129,6 @@ public class SpeedrunGame implements Listener, IMinigame {
         scoreMap.forEach(ncGame::addScore);
     }
 
-    private void notifyResults(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
-        for (Player p : gameManager.getPlayers()) {
-            if (rankings.containsKey(p)) {
-                int rank = rankings.get(p);
-                int add = scoreMap.getOrDefault(p, 0);
-                String suffix = add > 0 ? " (+" + add + "积分)" : "";
-                p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + rank + " 名！" + suffix);
-            } else {
-                p.sendMessage(ChatColor.RED + "你没有完成本轮游戏，无排名。");
-            }
-        }
-    }
-
     // ======================== 到达判定 ========================
 
     private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
@@ -163,9 +149,10 @@ public class SpeedrunGame implements Listener, IMinigame {
             player.teleport(spectatorSpawn);
         }
 
-        String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedSet.size() + " 名）";
+        //String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedSet.size() + " 名）";
+        String msg = ChatColor.AQUA + player.getName() + "跑到了终点";
         for (Player p : gameManager.getPlayers()) {
-            p.sendTitle("", msg, 10, 70, 10);
+            p.sendTitle("", msg, 10, 30, 10);
         }
 
         if (finishedSet.size() == gameManager.getAlivePlayers().size()) {

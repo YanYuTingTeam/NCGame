@@ -26,6 +26,7 @@ public class RankUtils {
 
     public static void broadcastLeaderboard(String gameName, Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
         //Bukkit.broadcastMessage("§6===== "+gameName+" 排行榜 =====");
+        Bukkit.broadcastMessage("§6 "); //滚木消息
         if (rankings.isEmpty()) {
             Bukkit.broadcastMessage("§c无人完成本轮游戏！");
             return;

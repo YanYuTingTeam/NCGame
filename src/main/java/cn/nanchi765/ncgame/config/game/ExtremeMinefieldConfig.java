@@ -147,7 +147,7 @@ public class ExtremeMinefieldConfig implements GameConfig {
 
     @Override
     public String subtitle() {
-        return "避开压力板陷阱，第一个到达终点！";
+        return "跑到终点,中途不要踩到地雷!";
     }
 
     @Override

@@ -87,16 +87,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 ncGame.addScore(entry.getKey(), entry.getValue());
         }
 
-        for (Player p : gameManager.getAlivePlayers()) {
-            if (finishedPlayers.contains(p)) {
-                int myRank = playerRank.get(p);
-                int myAdd = scoreAdd.getOrDefault(p, 0);
-                p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + (myAdd > 0 ? " (+" + myAdd + "积分)" : ""));
-            } else {
-                p.sendMessage(ChatColor.RED + "你没有完成本轮游戏，无排名。");
-            }
-        }
-
         RankUtils.broadcastLeaderboard("极限雷区", playerRank, scoreAdd);
 
         HandlerList.unregisterAll(this);
@@ -125,7 +115,6 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 Location spawn = spawnPoints.get(player);
                 if (spawn != null) {
                     player.teleport(spawn);
-                    player.sendMessage(ChatColor.RED + "你掉下去了，已传送回出生点！");
                 }
                 return;
             }
@@ -133,9 +122,10 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                 finishedPlayers.add(player);
                 player.setGameMode(GameMode.SPECTATOR);
                 player.teleport(config.getSpectatorSpawn());
-                String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedPlayers.size() + " 名）";
+                //String msg = ChatColor.AQUA + player.getName() + " 到达终点！（第 " + finishedPlayers.size() + " 名）";
+                String msg = ChatColor.AQUA + player.getName() + "穿过了雷区";
                 for (Player p : gameManager.getPlayers()) {
-                    p.sendTitle("", msg, 10, 70, 10);
+                    p.sendTitle("", msg, 10, 30, 10);
                 }
                 if (finishedPlayers.size() == alivePlayers.size()) {
                     gameManager.getGamePlayingTask().setCountdown(0);

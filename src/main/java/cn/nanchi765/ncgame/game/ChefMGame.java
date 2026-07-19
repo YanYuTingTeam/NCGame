@@ -355,6 +355,7 @@ public class ChefMGame implements Listener, IMinigame {
 
             // 打开熔炉时确保有煤炭
             ensureFurnaceCoal(furnace);
+            event.getPlayer().sendMessage("§e你占用了一个熔炉...");
 
             // 熔炉锁定逻辑
             if (config.isFurnaceLockEnabled()) {
@@ -384,6 +385,7 @@ public class ChefMGame implements Listener, IMinigame {
             }
             // 关闭时补充煤炭
             ensureFurnaceCoal(furnace);
+            event.getPlayer().sendMessage("§e你离开了熔炉,其他人可以使用它.");
         }
 
         // 箱子关闭后：内容变化则立即刷新
@@ -506,7 +508,7 @@ public class ChefMGame implements Listener, IMinigame {
         scores.put(player, currentScore);
         taskIndex.put(player, idx + 1);
 
-        player.sendMessage(ChatColor.GREEN + "提交成功！当前分数: " + currentScore);
+        player.sendMessage("§a美食家非常满意,你获得了1个赞 ！");
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
         String completeMsg = ChatColor.GREEN + player.getName() + " "
