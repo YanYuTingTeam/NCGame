@@ -49,7 +49,7 @@ public class GamePlayingTask implements Runnable {
                 String title = ChatColor.YELLOW + String.valueOf(countdown) + "秒后";
                 String subtitle = ChatColor.DARK_GREEN + "游戏即将结束";
                 for (Player p : gameManager.getPlayers()) {
-                    p.sendTitle(title, subtitle, countdown==4?0:10, 25, 10);
+                    p.sendTitle(title, subtitle, countdown==4?10:0, 25, 10);
                     if (gameConfig.isCountdownSoundEnabled())
                         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, 1.0f, 1.0f);
                 }

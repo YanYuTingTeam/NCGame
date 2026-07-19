@@ -231,12 +231,6 @@ public class BombSheepGame implements Listener, IMinigame {
     private void triggerExplosion(Player player, Sheep sheep) {
         player.getWorld().createExplosion(sheep.getLocation(), (float) config.getExplosionPower(), true);
         player.setHealth(Math.max(0, player.getHealth() - config.getExplodeDamage()));
-        Vector dir = player.getLocation().toVector().subtract(sheep.getLocation().toVector());
-        if (dir.lengthSquared() > 0.001) {
-            dir.normalize().multiply(Math.max(1.0, config.getExplosionPower())).setY(0.5);
-            player.setVelocity(dir);
-        }
-        sheep.remove();
         activeSheep.remove(sheep);
     }
 
