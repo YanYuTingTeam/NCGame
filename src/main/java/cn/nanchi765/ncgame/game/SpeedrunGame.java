@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.SpeedrunConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -145,22 +146,7 @@ public class SpeedrunGame implements Listener, IMinigame {
     // ======================== 到达判定 ========================
 
     private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== " + GAME_NAME + " 排行榜 =====");
-
-        if (rankings.isEmpty()) {
-            Bukkit.broadcastMessage(ChatColor.RED + "无人完成本轮游戏！");
-            return;
-        }
-
-        int count = 0;
-        for (Map.Entry<Player, Integer> entry : rankings.entrySet()) {
-            if (count >= LEADERBOARD_MAX_DISPLAY) break;
-            int add = scoreMap.getOrDefault(entry.getKey(), 0);
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + entry.getValue() + "名："
-                            + ChatColor.WHITE + entry.getKey().getName() + " (+" + add + "积分)");
-            count++;
-        }
+        RankUtils.broadcastLeaderboard(GAME_NAME, rankings, scoreMap);
     }
 
     // ======================== 事件监听 ========================

@@ -150,18 +150,7 @@ public class KnockbackBattleGame implements Listener, IMinigame {
         }
 
         // 广播前4名
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 击退战 排行榜 =====");
-        int displayed = 0;
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (displayed >= 4) break;
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            int add = scoreAdd.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + r + "名："
-                            + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
-            displayed++;
-        }
+        RankUtils.broadcastLeaderboard("击退战", playerRank, scoreAdd);
     }
 
     private int getScoreByRank(int rank) {

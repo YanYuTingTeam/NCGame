@@ -128,6 +128,8 @@ public class GameManager {
         addPlayer(player);
         player.setGameMode(GameMode.SPECTATOR);
         player.teleport(currentGame.getConfig().getSpectatorSpawn());
+        player.sendMessage("游戏正在进行中");
+        player.sendTitle("§e游戏进行中", "&2你将在下轮小游戏加入", 0, 80, 10);
         new BukkitRunnable() {
             @Override
             public void run() {

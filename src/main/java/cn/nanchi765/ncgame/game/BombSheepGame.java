@@ -5,6 +5,7 @@ import cn.nanchi765.ncgame.config.game.BombSheepConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -270,6 +271,8 @@ public class BombSheepGame implements Listener, IMinigame {
             case 3:
                 return 5;
             case 4:
+                return 3;
+            case 5:
                 return 1;
             default:
                 return 0;
@@ -309,22 +312,7 @@ public class BombSheepGame implements Listener, IMinigame {
      * 广播排行榜
      */
     private void broadcastLeaderboard(Map<Player, Integer> playerRank, Map<Player, Integer> scoreAdd) {
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 炸弹羊 排行榜 =====");
-        if (playerRank.isEmpty()) {
-            Bukkit.broadcastMessage(ChatColor.RED + "无存活玩家！");
-            return;
-        }
-        int count = 0;
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (count >= 4) break;
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            int add = scoreAdd.getOrDefault(p, 0);
-            int wool = woolScores.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE
-                    + p.getName() + " (羊毛 " + wool + ") (+" + add + "积分)");
-            count++;
-        }
+        RankUtils.broadcastLeaderboard("炸弹羊", playerRank, scoreAdd);
     }
 
     /**
