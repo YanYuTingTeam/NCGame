@@ -5,6 +5,7 @@ import cn.nanchi765.ncgame.config.game.ExtremeMinefieldConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.manager.Status;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -96,20 +97,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
             }
         }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 极限雷区 排行榜 =====");
-        if (finishedPlayers.isEmpty()) {
-            Bukkit.broadcastMessage(ChatColor.RED + "无人完成本轮游戏！");
-        } else {
-            int count = 0;
-            for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-                if (count >= 4) break;
-                Player p = entry.getKey();
-                int r = entry.getValue();
-                int add = scoreAdd.getOrDefault(p, 0);
-                Bukkit.broadcastMessage(ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
-                count++;
-            }
-        }
+        RankUtils.broadcastLeaderboard("极限雷区", playerRank, scoreAdd);
 
         HandlerList.unregisterAll(this);
 
@@ -189,6 +177,7 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
                     new BukkitRunnable() {
                         @Override
                         public void run() {
+                            if (!(GameUtils.isGameActive(ExtremeMinefieldGame.this)&&GameUtils.isAlive(player))) return;
                             player.teleport(spawn);
                         }
                     }.runTaskLater(plugin, delay);

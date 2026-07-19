@@ -189,17 +189,7 @@ public class SnakeGame implements Listener, IMinigame {
     }
 
     private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== " + GAME_NAME + " 排行榜 =====");
-
-        int count = 0;
-        for (Map.Entry<Player, Integer> entry : rankings.entrySet()) {
-            if (count >= LEADERBOARD_MAX_DISPLAY) break;
-            int add = scoreMap.getOrDefault(entry.getKey(), 0);
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + entry.getValue() + "名："
-                            + ChatColor.WHITE + entry.getKey().getName() + " (+" + add + "积分)");
-            count++;
-        }
+        RankUtils.broadcastLeaderboard(GAME_NAME, rankings, scoreMap);
     }
 
     // ======================== 事件监听 ========================

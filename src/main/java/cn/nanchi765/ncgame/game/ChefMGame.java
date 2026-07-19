@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.ChefMConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -222,16 +223,30 @@ public class ChefMGame implements Listener, IMinigame {
     // ==================== 结算 ====================
 
     private void announceResults() {
-        List<Map.Entry<Player, Integer>> sorted = new ArrayList<>(scores.entrySet());
-        sorted.sort(Map.Entry.<Player, Integer>comparingByValue().reversed());
+        List<Player> sorted = new ArrayList<>(scores.keySet());
+        sorted.sort((a, b) -> {
+            int idxA = taskIndex.getOrDefault(a, 0);
+            int idxB = taskIndex.getOrDefault(b, 0);
+            if (idxB != idxA) return idxB - idxA;
+            return scores.getOrDefault(b, 0) - scores.getOrDefault(a, 0);
+        });
 
         Map<Player, Integer> playerRank = new LinkedHashMap<>();
         Map<Player, Integer> scoreAdd = new HashMap<>();
-        int rank = 1;
-        for (Map.Entry<Player, Integer> entry : sorted) {
-            playerRank.put(entry.getKey(), rank);
-            scoreAdd.put(entry.getKey(), getRankScore(rank));
-            rank++;
+        int rank = 0;
+        int prevIdx = -1;
+        int prevScore = -1;
+        for (int i = 0; i < sorted.size(); i++) {
+            Player p = sorted.get(i);
+            int idx = taskIndex.getOrDefault(p, 0);
+            int sc = scores.getOrDefault(p, 0);
+            if (i == 0 || idx != prevIdx || sc != prevScore) {
+                rank = i + 1;
+            }
+            playerRank.put(p, rank);
+            scoreAdd.put(p, getRankScore(rank));
+            prevIdx = idx;
+            prevScore = sc;
         }
 
         if (plugin instanceof NCGame) {
@@ -247,18 +262,7 @@ public class ChefMGame implements Listener, IMinigame {
             p.sendMessage(ChatColor.GREEN + "你获得了 " + myScore + " 分，第 " + myRank + " 名！" + addMsg);
         }
 
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 厨神 排行榜 =====");
-        int displayed = 0;
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (displayed >= 4) break;
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + r + "名：" + ChatColor.WHITE + p.getName()
-                            + " (厨神分 " + scores.getOrDefault(p, 0)
-                            + ") (+" + scoreAdd.getOrDefault(p, 0) + "积分)");
-            displayed++;
-        }
+        RankUtils.broadcastLeaderboard("厨神", playerRank, scoreAdd);
     }
 
     private int getRankScore(int rank) {

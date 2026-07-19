@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.OneHitKillConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -106,21 +107,7 @@ public class OneHitKillGame implements Listener, IMinigame {
      * 构建排名：存活玩家并列第1，淘汰玩家按淘汰时间倒序排列
      */
     private Map<Player, Integer> buildRankings() {
-        Map<Player, Integer> rankings = new LinkedHashMap<>();
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
-
-        int nextRank = alivePlayers.isEmpty() ? 1 : 2;
-        for (Player p : alivePlayers) {
-            rankings.put(p, 1);
-        }
-
-        List<Player> eliminated = new ArrayList<>(eliminationOrder);
-        Collections.reverse(eliminated);
-        for (Player p : eliminated) {
-            rankings.put(p, nextRank++);
-        }
-
-        return rankings;
+        return RankUtils.buildSurvivalRanking(gameManager.getAlivePlayers(), eliminationOrder);
     }
 
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
@@ -147,17 +134,7 @@ public class OneHitKillGame implements Listener, IMinigame {
     }
 
     private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== " + GAME_NAME + " 排行榜 =====");
-
-        int count = 0;
-        for (Map.Entry<Player, Integer> entry : rankings.entrySet()) {
-            if (count >= 4) break;
-            int add = scoreMap.getOrDefault(entry.getKey(), 0);
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + entry.getValue() + "名："
-                            + ChatColor.WHITE + entry.getKey().getName() + " (+" + add + "积分)");
-            count++;
-        }
+        RankUtils.broadcastLeaderboard(GAME_NAME, rankings, scoreMap);
     }
 
     // ======================== 淘汰逻辑 ========================

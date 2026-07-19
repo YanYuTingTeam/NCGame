@@ -129,17 +129,6 @@ public class SnowSpleefGame implements Listener, IMinigame {
         return RankUtils.buildSurvivalRanking(gameManager.getAlivePlayers(), t);
     }
 
-    private List<Player> getEliminatedPlayers() {
-        Set<Player> aliveSet = new HashSet<>(gameManager.getAlivePlayers());
-        List<Player> eliminated = new ArrayList<>();
-        for (Player p : gameManager.getPlayers()) {
-            if (!aliveSet.contains(p)) {
-                eliminated.add(p);
-            }
-        }
-        return eliminated;
-    }
-
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
         Map<Player, Integer> scores = new HashMap<>();
         rankings.forEach((player, rank) -> {
@@ -165,17 +154,7 @@ public class SnowSpleefGame implements Listener, IMinigame {
     }
 
     private void broadcastLeaderboard(Map<Player, Integer> rankings, Map<Player, Integer> scoreMap) {
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== " + GAME_NAME + " 排行榜 =====");
-
-        int count = 0;
-        for (Map.Entry<Player, Integer> entry : rankings.entrySet()) {
-            if (count >= LEADERBOARD_MAX_DISPLAY) break;
-            int add = scoreMap.getOrDefault(entry.getKey(), 0);
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + entry.getValue() + "名："
-                            + ChatColor.WHITE + entry.getKey().getName() + " (+" + add + "积分)");
-            count++;
-        }
+        RankUtils.broadcastLeaderboard(GAME_NAME, rankings, scoreMap);
     }
 
     // ======================== 事件监听 ========================

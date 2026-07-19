@@ -208,23 +208,12 @@ public class FaithBlockGame implements Listener, IMinigame {
         for (Player p : allPlayers) {
             int myRank = playerRank.getOrDefault(p, allPlayers.size());
             int myScore = scoreAdd.getOrDefault(p, 0);
-            String suffix = myScore > 0 ? " (+" + myScore + "积分)" : "";
+            String suffix = myScore > 0 ? " (+" + myScore + "分)" : "";
             p.sendMessage(ChatColor.GREEN + "你在本回合小游戏获得第 " + myRank + " 名！" + suffix);
         }
 
         // 广播前4名
-        Bukkit.broadcastMessage(ChatColor.GOLD + "===== 信仰方块 排行榜 =====");
-        int displayed = 0;
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            if (displayed >= 4) break;
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            int add = scoreAdd.getOrDefault(p, 0);
-            Bukkit.broadcastMessage(
-                    ChatColor.YELLOW + "第" + r + "名："
-                            + ChatColor.WHITE + p.getName() + " (+" + add + "积分)");
-            displayed++;
-        }
+        RankUtils.broadcastLeaderboard("信仰方块", playerRank, scoreAdd);
     }
 
     private int getScoreByRank(int rank) {
