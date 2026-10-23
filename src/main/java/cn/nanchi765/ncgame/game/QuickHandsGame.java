@@ -23,11 +23,6 @@ import java.util.*;
 public class QuickHandsGame implements Listener, IMinigame {
 
     private static final String GAME_NAME = "眼疾手快";
-    /**
-     * 按名次排列的积分奖励
-     */
-    private static final int[] SCORE_TABLE = {10, 7, 5, 1};
-    private static final int LEADERBOARD_MAX_DISPLAY = 4;
 
     private final JavaPlugin plugin;
     @Getter
@@ -135,21 +130,13 @@ public class QuickHandsGame implements Listener, IMinigame {
     // ======================== 结算辅助 ========================
 
     private Map<Player, Integer> buildRankings() {
-        Map<Player, Integer> rankings = new LinkedHashMap<>();
-        int rank = 1;
-        for (Player p : finishedSet) {
-            rankings.put(p, rank++);
-        }
-        return rankings;
+        double winY = config.getWinY();
+        return RankUtils.buildRaceRanking(gameManager.getAlivePlayers(), new ArrayList<>(finishedSet),
+                p -> (int) Math.round(Math.abs(winY - p.getLocation().getY())));
     }
 
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
-        Map<Player, Integer> scores = new HashMap<>();
-        rankings.forEach((player, rank) -> {
-            int index = rank - 1;
-            scores.put(player, index < SCORE_TABLE.length ? SCORE_TABLE[index] : 0);
-        });
-        return scores;
+        return RankUtils.calculateScores(rankings);
     }
 
     private void applyScores(Map<Player, Integer> scoreMap) {

@@ -83,6 +83,18 @@ public class ExtremeMinefieldConfig implements GameConfig {
                 && loc.getZ() >= minZ && loc.getZ() <= maxZ;
     }
 
+    public Location getWinRegionCenter() {
+        World world = Bukkit.getWorld(config.getString("game.win-region.world", getWorldName()));
+        if (world == null) world = getWorld();
+        double x1 = config.getDouble("game.win-region.pos1.x", 0);
+        double y1 = config.getDouble("game.win-region.pos1.y", 0);
+        double z1 = config.getDouble("game.win-region.pos1.z", 0);
+        double x2 = config.getDouble("game.win-region.pos2.x", 0);
+        double y2 = config.getDouble("game.win-region.pos2.y", 0);
+        double z2 = config.getDouble("game.win-region.pos2.z", 0);
+        return new Location(world, (x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+    }
+
     // 陷阱设置
     public double getLaunchPower() {
         return config.getDouble("game.trap.launch-power", 2.0);

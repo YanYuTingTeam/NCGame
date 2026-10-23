@@ -104,28 +104,13 @@ public class BombSheepGame implements Listener, IMinigame {
         cleanupSheep();
         cancelSheepTask();
 
-        List<Player> players = gameManager.getPlayers();
-        List<Player> alivePlayers = gameManager.getAlivePlayers();
+        // 按羊毛数排名：多的在前，数量相同并列
+        Map<Player, Integer> playerRank = RankUtils.buildCompetitionRanking(
+                new ArrayList<>(woolScores.keySet()),
+                Comparator.comparing((Player p) -> woolScores.getOrDefault(p, 0)).reversed()
+        );
 
-        // 仅统计存活玩家的羊毛数进行排名
-        Map<Player, Integer> aliveWoolScores = new LinkedHashMap<>();
-        for (Player p : alivePlayers) {
-            aliveWoolScores.put(p, woolScores.getOrDefault(p, 0));
-        }
-
-        // 按羊毛数降序排序
-        List<Map.Entry<Player, Integer>> sorted = new ArrayList<>(aliveWoolScores.entrySet());
-        sorted.sort(Map.Entry.<Player, Integer>comparingByValue().reversed());
-
-        // 构建排名和积分
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        int rank = 1;
-        for (Map.Entry<Player, Integer> entry : sorted) {
-            playerRank.put(entry.getKey(), rank);
-            scoreAdd.put(entry.getKey(), rankToScore(rank));
-            rank++;
-        }
+        Map<Player, Integer> scoreAdd = RankUtils.calculateScores(playerRank);
 
         // 发放积分
         addScores(scoreAdd);
@@ -162,10 +147,25 @@ public class BombSheepGame implements Listener, IMinigame {
 
         // 正常剪毛
         player.playSound(player.getLocation(), Sound.ENTITY_SHEEP_SHEAR, 1.0f, 1.0f);
+        dropWool(sheep.getLocation());
         activeSheep.remove(sheep);
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (sheep.isValid()) sheep.remove();
         });
+    }
+
+    /**
+     * 剪羊毛掉落：1~3个白羊毛，5%概率掉落异色羊毛
+     */
+    private void dropWool(Location loc) {
+        int amount = 1 + random.nextInt(3);
+        loc.getWorld().dropItem(loc, new ItemStack(Material.WOOL, amount, (short) 0));
+
+        if (random.nextDouble() < 0.05) {
+            short[] colors = {1, 15, 8, 14};
+            short color = colors[random.nextInt(colors.length)];
+            loc.getWorld().dropItem(loc, new ItemStack(Material.WOOL, 1, color));
+        }
     }
 
     @EventHandler
@@ -175,8 +175,11 @@ public class BombSheepGame implements Listener, IMinigame {
         if (!isAlive(player)) return;
 
         ItemStack item = event.getItem().getItemStack();
-        if (item.getType() == Material.WOOL && item.getDurability() == 0) {
+        if (item.getType() != Material.WOOL) return;
+        if (item.getDurability() == 0) {
             woolScores.merge(player, item.getAmount(), Integer::sum);
+        } else {
+            woolScores.merge(player, item.getAmount() * 3, Integer::sum);
         }
     }
 
@@ -251,26 +254,6 @@ public class BombSheepGame implements Listener, IMinigame {
         if (sheepSpawnTask != null) {
             sheepSpawnTask.cancel();
             sheepSpawnTask = null;
-        }
-    }
-
-    /**
-     * 名次转积分
-     */
-    private int rankToScore(int rank) {
-        switch (rank) {
-            case 1:
-                return 10;
-            case 2:
-                return 7;
-            case 3:
-                return 5;
-            case 4:
-                return 3;
-            case 5:
-                return 1;
-            default:
-                return 0;
         }
     }
 

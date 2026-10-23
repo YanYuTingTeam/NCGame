@@ -27,6 +27,8 @@ public class PlayerDataManager {
     private HikariDataSource hikari;
     @Getter
     private Map<UUID, Integer> playerScores = new HashMap<>();
+    private boolean yamlDirty = false;
+    private boolean flushTaskQueued = false;
 
     public PlayerDataManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -112,26 +114,50 @@ public class PlayerDataManager {
 
     // ==================== 公共存储接口 ====================
     public void savePlayerScore(Player player, int score) {
-        UUID uuid = player.getUniqueId();
-        String name = player.getName();
-        if ("yaml".equals(storageType)) {
-            dataConfig.set("players." + uuid.toString() + ".name", name);
-            dataConfig.set("players." + uuid + ".score", score);
-            saveYaml();
-        } else if ("mysql".equals(storageType)) {
-            saveToMysql(uuid, name, score);
-        }
+        savePlayerScore(player.getUniqueId(), player.getName(), score);
     }
 
     // 保留旧接口（兼容无 Player 对象时）
     public void savePlayerScore(UUID uuid, int score) {
-        String name = getPlayerName(uuid);
+        savePlayerScore(uuid, getPlayerName(uuid), score);
+    }
+
+    private void savePlayerScore(UUID uuid, String name, int score) {
         if ("yaml".equals(storageType)) {
-            dataConfig.set("players." + uuid.toString() + ".name", name);
-            dataConfig.set("players." + uuid + ".score", score);
-            saveYaml();
+            synchronized (dataConfig) {
+                dataConfig.set("players." + uuid.toString() + ".name", name);
+                dataConfig.set("players." + uuid + ".score", score);
+            }
+            yamlDirty = true;
+            scheduleFlush();
         } else if ("mysql".equals(storageType)) {
-            saveToMysql(uuid, name, score);
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> saveToMysql(uuid, name, score));
+        }
+    }
+
+    // ==================== YAML 合并落盘 ====================
+    private void scheduleFlush() {
+        if (flushTaskQueued) return;
+        flushTaskQueued = true;
+        plugin.getServer().getScheduler().runTaskLater(plugin, this::flushYaml, 600L);
+    }
+
+    private void flushYaml() {
+        flushTaskQueued = false;
+        if (!yamlDirty) return;
+        yamlDirty = false;
+        String serialized;
+        synchronized (dataConfig) {
+            serialized = dataConfig.saveToString();
+        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> writeYamlFile(serialized));
+    }
+
+    private void writeYamlFile(String data) {
+        try {
+            java.nio.file.Files.write(dataFile.toPath(), data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            plugin.getLogger().severe("无法保存玩家数据到 YAML");
         }
     }
 
@@ -166,15 +192,6 @@ public class PlayerDataManager {
             loadAllFromMysql(scores);
         }
         return scores;
-    }
-
-    // ==================== YAML 保存 ====================
-    private void saveYaml() {
-        try {
-            dataConfig.save(dataFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("无法保存玩家数据到 YAML");
-        }
     }
 
     // ==================== MySQL 操作 ====================
@@ -228,6 +245,14 @@ public class PlayerDataManager {
 
     // 关闭连接池
     public void close() {
+        if ("yaml".equals(storageType) && yamlDirty) {
+            yamlDirty = false;
+            String serialized;
+            synchronized (dataConfig) {
+                serialized = dataConfig.saveToString();
+            }
+            writeYamlFile(serialized);
+        }
         if (hikari != null && !hikari.isClosed()) {
             hikari.close();
             plugin.getLogger().info("MySQL 连接池已关闭");

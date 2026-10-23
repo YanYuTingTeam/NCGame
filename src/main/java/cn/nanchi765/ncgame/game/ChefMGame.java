@@ -44,10 +44,6 @@ public class ChefMGame implements Listener, IMinigame {
     private static final String ANIMAL_NAME_PREFIX = "chef_";
     private static final int CHEF_SWORD_SLOT = 0;
     private static final int TASK_DISPLAY_SLOT = 8;
-    /**
-     * 名次 -> 积分 (index 1-based)
-     */
-    private static final int[] RANK_SCORES = {0, 10, 7, 5, 1};
 
     // ==================== 字段 ====================
 
@@ -231,23 +227,16 @@ public class ChefMGame implements Listener, IMinigame {
             return scores.getOrDefault(b, 0) - scores.getOrDefault(a, 0);
         });
 
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        int rank = 0;
-        int prevIdx = -1;
-        int prevScore = -1;
-        for (int i = 0; i < sorted.size(); i++) {
-            Player p = sorted.get(i);
-            int idx = taskIndex.getOrDefault(p, 0);
-            int sc = scores.getOrDefault(p, 0);
-            if (i == 0 || idx != prevIdx || sc != prevScore) {
-                rank = i + 1;
-            }
-            playerRank.put(p, rank);
-            scoreAdd.put(p, getRankScore(rank));
-            prevIdx = idx;
-            prevScore = sc;
+        Map<Player, Long> keys = new HashMap<>();
+        for (Player p : sorted) {
+            long idx = taskIndex.getOrDefault(p, 0);
+            keys.put(p, idx * 1000000L + scores.getOrDefault(p, 0));
         }
+
+        Map<Player, Integer> playerRank = RankUtils.buildCompetitionRanking(sorted,
+                Comparator.comparingLong(keys::get).reversed());
+
+        Map<Player, Integer> scoreAdd = RankUtils.calculateScores(playerRank);
 
         if (plugin instanceof NCGame) {
             NCGame ncGame = (NCGame) plugin;
@@ -263,11 +252,6 @@ public class ChefMGame implements Listener, IMinigame {
         }
 
         RankUtils.broadcastLeaderboard("厨神", playerRank, scoreAdd);
-    }
-
-    private int getRankScore(int rank) {
-        if (rank >= 1 && rank < RANK_SCORES.length) return RANK_SCORES[rank];
-        return 0;
     }
 
     // ==================== 事件处理 ====================

@@ -29,9 +29,6 @@ public class FaithBlockGame implements Listener, IMinigame {
     private static final byte COLOR_RED = 14;
     private static final byte COLOR_AIR = -1;
 
-    // 积分表：排名 -> 积分
-    private static final int[] SCORE_TABLE = {0, 10, 7, 5, 1};
-
     // ========== 依赖 & 状态 ==========
     private final JavaPlugin plugin;
     @Getter
@@ -196,8 +193,7 @@ public class FaithBlockGame implements Listener, IMinigame {
         Map<Player, Integer> playerRank = RankUtils.buildSurvivalRanking(alivePlayers, t);
 
         // 计算积分并发放
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        playerRank.forEach((p, r) -> scoreAdd.put(p, getScoreByRank(r)));
+        Map<Player, Integer> scoreAdd = RankUtils.calculateScores(playerRank);
 
         if (plugin instanceof NCGame) {
             NCGame ncGame = (NCGame) plugin;
@@ -206,13 +202,6 @@ public class FaithBlockGame implements Listener, IMinigame {
 
         // 广播前4名
         RankUtils.broadcastLeaderboard("信仰方块", playerRank, scoreAdd);
-    }
-
-    private int getScoreByRank(int rank) {
-        if (rank >= 1 && rank < SCORE_TABLE.length) {
-            return SCORE_TABLE[rank];
-        }
-        return 0;
     }
 
     // ========== 事件监听 ==========

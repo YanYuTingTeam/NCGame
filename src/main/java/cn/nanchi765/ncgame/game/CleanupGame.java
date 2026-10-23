@@ -4,6 +4,7 @@ import cn.nanchi765.ncgame.NCGame;
 import cn.nanchi765.ncgame.config.game.CleanupConfig;
 import cn.nanchi765.ncgame.manager.GameManager;
 import cn.nanchi765.ncgame.utils.GameUtils;
+import cn.nanchi765.ncgame.utils.RankUtils;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -78,27 +79,13 @@ public class CleanupGame implements Listener, IMinigame {
 
     @Override
     public void end() {
-        // 按破坏数量排序：多的在前
-        List<Map.Entry<Player, Integer>> sorted = new ArrayList<>(blockCounts.entrySet());
-        sorted.sort(Map.Entry.<Player, Integer>comparingByValue().reversed());
+        // 按破坏数量排序：多的在前，数量相同并列
+        Map<Player, Integer> playerRank = RankUtils.buildCompetitionRanking(
+                new ArrayList<>(blockCounts.keySet()),
+                Comparator.comparing((Player p) -> blockCounts.getOrDefault(p, 0)).reversed()
+        );
 
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        int rank = 1;
-        for (Map.Entry<Player, Integer> entry : sorted) {
-            playerRank.put(entry.getKey(), rank++);
-        }
-
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            Player p = entry.getKey();
-            int r = entry.getValue();
-            int add = 0;
-            if (r == 1) add = 10;
-            else if (r == 2) add = 7;
-            else if (r == 3) add = 5;
-            else if (r == 4) add = 1;
-            scoreAdd.put(p, add);
-        }
+        Map<Player, Integer> scoreAdd = RankUtils.calculateScores(playerRank);
 
         if (plugin instanceof NCGame) {
             NCGame ncGame = (NCGame) plugin;

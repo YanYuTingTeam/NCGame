@@ -63,23 +63,10 @@ public class ExtremeMinefieldGame implements Listener, IMinigame {
 
     @Override
     public void end() {
-        // 只对完成的玩家排名
-        Map<Player, Integer> playerRank = new LinkedHashMap<>();
-        int rank = 1;
-        for (Player p : finishedPlayers) {
-            playerRank.put(p, rank++);
-        }
+        Map<Player, Integer> playerRank = RankUtils.buildRaceRanking(gameManager.getAlivePlayers(), finishedPlayers,
+                p -> (int) Math.round(p.getLocation().distance(config.getWinRegionCenter())));
 
-        Map<Player, Integer> scoreAdd = new HashMap<>();
-        for (Map.Entry<Player, Integer> entry : playerRank.entrySet()) {
-            int r = entry.getValue();
-            int add = 0;
-            if (r == 1) add = 10;
-            else if (r == 2) add = 7;
-            else if (r == 3) add = 5;
-            else if (r == 4) add = 1;
-            scoreAdd.put(entry.getKey(), add);
-        }
+        Map<Player, Integer> scoreAdd = RankUtils.calculateScores(playerRank);
 
         if (plugin instanceof NCGame) {
             NCGame ncGame = (NCGame) plugin;

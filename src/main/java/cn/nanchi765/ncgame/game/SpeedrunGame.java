@@ -23,8 +23,6 @@ import java.util.*;
 public class SpeedrunGame implements Listener, IMinigame {
 
     private static final String GAME_NAME = "急速酷跑";
-    private static final int[] SCORE_TABLE = {10, 7, 5, 1};
-    private static final int LEADERBOARD_MAX_DISPLAY = 4;
 
     private final JavaPlugin plugin;
     @Getter
@@ -106,21 +104,12 @@ public class SpeedrunGame implements Listener, IMinigame {
     }
 
     private Map<Player, Integer> buildRankings() {
-        Map<Player, Integer> rankings = new LinkedHashMap<>();
-        int rank = 1;
-        for (Player p : finishedSet) {
-            rankings.put(p, rank++);
-        }
-        return rankings;
+        return RankUtils.buildRaceRanking(gameManager.getAlivePlayers(), new ArrayList<>(finishedSet),
+                p -> (int) Math.round(p.getLocation().distance(config.getWinRegionCenter())));
     }
 
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
-        Map<Player, Integer> scores = new HashMap<>();
-        rankings.forEach((player, rank) -> {
-            int index = rank - 1;
-            scores.put(player, index < SCORE_TABLE.length ? SCORE_TABLE[index] : 0);
-        });
-        return scores;
+        return RankUtils.calculateScores(rankings);
     }
 
     private void applyScores(Map<Player, Integer> scoreMap) {

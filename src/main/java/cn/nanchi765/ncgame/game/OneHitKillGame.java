@@ -23,10 +23,6 @@ import java.util.*;
 public class OneHitKillGame implements Listener, IMinigame {
 
     private static final String GAME_NAME = "一箭必杀";
-    /**
-     * 按名次排列的积分奖励：第1名→10, 第2名→7, 第3名→5, 第4名→1, 其余→0
-     */
-    private static final int[] SCORE_TABLE = {10, 7, 5, 1};
 
     private final JavaPlugin plugin;
     @Getter
@@ -108,12 +104,7 @@ public class OneHitKillGame implements Listener, IMinigame {
     }
 
     private Map<Player, Integer> calculateScores(Map<Player, Integer> rankings) {
-        Map<Player, Integer> scores = new HashMap<>();
-        rankings.forEach((player, rank) -> {
-            int index = rank - 1;
-            scores.put(player, index < SCORE_TABLE.length ? SCORE_TABLE[index] : 0);
-        });
-        return scores;
+        return RankUtils.calculateScores(rankings);
     }
 
     private void applyScores(Map<Player, Integer> scoreMap) {
