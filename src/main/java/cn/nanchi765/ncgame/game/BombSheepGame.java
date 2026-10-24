@@ -146,6 +146,7 @@ public class BombSheepGame implements Listener, IMinigame {
         }
 
         // 正常剪毛
+        event.setCancelled(true);
         player.playSound(player.getLocation(), Sound.ENTITY_SHEEP_SHEAR, 1.0f, 1.0f);
         dropWool(sheep.getLocation());
         activeSheep.remove(sheep);
@@ -155,17 +156,16 @@ public class BombSheepGame implements Listener, IMinigame {
     }
 
     /**
-     * 剪羊毛掉落：1~3个白羊毛，5%概率掉落异色羊毛
+     * 剪羊毛掉落：1~3个羊毛, 5%概率为异色羊毛
      */
     private void dropWool(Location loc) {
         int amount = 1 + random.nextInt(3);
-        loc.getWorld().dropItem(loc, new ItemStack(Material.WOOL, amount, (short) 0));
-
+        short color = 0;
         if (random.nextDouble() < 0.05) {
             short[] colors = {1, 15, 8, 14};
-            short color = colors[random.nextInt(colors.length)];
-            loc.getWorld().dropItem(loc, new ItemStack(Material.WOOL, 1, color));
+            color = colors[random.nextInt(colors.length)];
         }
+        loc.getWorld().dropItem(loc, new ItemStack(Material.WOOL, amount, color));
     }
 
     @EventHandler
