@@ -234,7 +234,7 @@ public class ChefMGame implements Listener, IMinigame {
         }
 
         Map<Player, Integer> playerRank = RankUtils.buildCompetitionRanking(sorted,
-                Comparator.comparingLong(keys::get).reversed());
+                Comparator.comparingLong((Player p) -> keys.get(p)).reversed());
 
         Map<Player, Integer> scoreAdd = RankUtils.calculateScores(playerRank);
 
