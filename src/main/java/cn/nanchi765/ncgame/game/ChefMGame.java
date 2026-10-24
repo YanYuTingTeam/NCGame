@@ -339,7 +339,6 @@ public class ChefMGame implements Listener, IMinigame {
 
             // 打开熔炉时确保有煤炭
             ensureFurnaceCoal(furnace);
-            event.getPlayer().sendMessage("§e你占用了一个熔炉...");
 
             // 熔炉锁定逻辑
             if (config.isFurnaceLockEnabled()) {
@@ -351,6 +350,7 @@ public class ChefMGame implements Listener, IMinigame {
                 }
                 furnaceUsers.put(loc, (Player) event.getPlayer());
             }
+            event.getPlayer().sendMessage("§e你占用了一个熔炉...");
         }
     }
 
